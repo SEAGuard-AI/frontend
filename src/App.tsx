@@ -4,8 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { UserPreferencesProvider, usePreferences } from "@/contexts/UserPreferencesContext";
 import AppLayout from "@/components/AppLayout";
+import OnboardingPage from "@/pages/OnboardingPage";
 import LoginPage from "@/pages/LoginPage";
+import UserSetupPage from "@/pages/UserSetupPage";
+import HomePage from "@/pages/HomePage";
 import MapPage from "@/pages/MapPage";
 import AlertsPage from "@/pages/AlertsPage";
 import ContactsPage from "@/pages/ContactsPage";
@@ -18,19 +22,36 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/onboarding" replace />;
+};
+
+const SetupGuard = ({ children }: { children: React.ReactNode }) => {
+  const { preferences } = usePreferences();
+  if (!preferences.setupComplete) return <Navigate to="/setup" replace />;
+  return <>{children}</>;
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+  return isAuthenticated ? <Navigate to="/setup" replace /> : <>{children}</>;
+};
+
+const SetupRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  const { preferences } = usePreferences();
+  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
+  if (preferences.setupComplete) return <Navigate to="/" replace />;
+  return <>{children}</>;
 };
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/onboarding" element={<AuthRoute><OnboardingPage /></AuthRoute>} />
     <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
-    <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-      <Route path="/" element={<MapPage />} />
+    <Route path="/setup" element={<SetupRoute><UserSetupPage /></SetupRoute>} />
+    <Route element={<ProtectedRoute><SetupGuard><AppLayout /></SetupGuard></ProtectedRoute>}>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/map" element={<MapPage />} />
       <Route path="/alerts" element={<AlertsPage />} />
       <Route path="/contacts" element={<ContactsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
@@ -47,9 +68,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <UserPreferencesProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </UserPreferencesProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

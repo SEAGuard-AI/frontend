@@ -6,17 +6,17 @@ import { ArrowLeft, Camera, Clock, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-const safeZone = disasterZones.find(z => z.level === 'safe' && z.country === 'Indonesia')!;
+const evacuationZone = disasterZones.find(z => z.level === 'evacuation' && z.country === 'Indonesia')!;
 const dangerZone = disasterZones.find(z => z.level === 'danger' && z.country === 'Indonesia')!;
 
 const evacuationRoutes = [
   {
     id: 'r1',
     name: 'Primary Route — Via Jl. MT Haryono',
-    safety: 'safe' as const,
+    safety: 'evacuation' as const,
     time: '18 min walk',
     distance: '1.4 km',
-    points: [dangerZone.center, [-6.210, 106.850], [-6.230, 106.840], [-6.250, 106.815], safeZone.center] as [number, number][],
+    points: [dangerZone.center, [-6.210, 106.850], [-6.230, 106.840], [-6.250, 106.815], evacuationZone.center] as [number, number][],
   },
   {
     id: 'r2',
@@ -24,7 +24,7 @@ const evacuationRoutes = [
     safety: 'caution' as const,
     time: '25 min walk',
     distance: '2.1 km',
-    points: [dangerZone.center, [-6.205, 106.830], [-6.225, 106.820], [-6.245, 106.810], safeZone.center] as [number, number][],
+    points: [dangerZone.center, [-6.205, 106.830], [-6.225, 106.820], [-6.245, 106.810], evacuationZone.center] as [number, number][],
   },
   {
     id: 'r3',
@@ -36,7 +36,7 @@ const evacuationRoutes = [
   },
 ];
 
-const routeColors = { safe: '#22c55e', caution: '#eab308', danger: '#ef4444' };
+const routeColors = { evacuation: '#22c55e', caution: '#eab308', danger: '#ef4444' };
 
 const EvacuationPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -48,31 +48,26 @@ const EvacuationPage = () => {
     if (!mapRef.current || mapInstance.current) return;
     const map = L.map(mapRef.current, {
       center: countryDefaultCenters['Indonesia'],
-      zoom: 13,
-      zoomControl: false,
-      attributionControl: false,
+      zoom: 13, zoomControl: false, attributionControl: false,
     });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
     mapInstance.current = map;
 
-    // Draw routes
     evacuationRoutes.forEach(route => {
       L.polyline(route.points, {
         color: routeColors[route.safety],
-        weight: route.safety === 'safe' ? 5 : 3,
+        weight: route.safety === 'evacuation' ? 5 : 3,
         opacity: 0.8,
         dashArray: route.safety === 'danger' ? '8, 8' : undefined,
       }).addTo(map);
     });
 
-    // Safe zone marker
-    const safeIcon = L.divIcon({
-      html: '<div style="background:#22c55e;color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap">🏥 Safe Zone</div>',
+    const shelterIcon = L.divIcon({
+      html: '<div style="background:#22c55e;color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap">🏥 Evacuation Shelter</div>',
       className: 'custom-marker', iconAnchor: [40, 12],
     });
-    L.marker(safeZone.center, { icon: safeIcon }).addTo(map);
+    L.marker(evacuationZone.center, { icon: shelterIcon }).addTo(map);
 
-    // User position marker
     const userIcon = L.divIcon({
       html: '<div style="background:#3b82f6;border:3px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 0 12px rgba(59,130,246,0.5)"></div>',
       className: 'custom-marker', iconSize: [16, 16], iconAnchor: [8, 8],
@@ -84,19 +79,16 @@ const EvacuationPage = () => {
 
   return (
     <div className="relative h-full w-full flex flex-col bg-background">
-      {/* Map */}
       <div ref={mapRef} className="flex-1" />
 
-      {/* Back button */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/map')}
         className="absolute top-4 left-4 z-[1000] flex items-center gap-2 rounded-lg bg-card/95 backdrop-blur-sm border border-border px-3 py-2 text-sm text-foreground shadow-lg"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
       </button>
 
-      {/* Route Panel */}
       <div className="shrink-0 border-t border-border bg-card p-4 space-y-3 max-h-[45%] overflow-y-auto">
         <h2 className="text-base font-bold text-foreground">Evacuation Routes</h2>
         <div className="space-y-2">
@@ -124,7 +116,6 @@ const EvacuationPage = () => {
           ))}
         </div>
 
-        {/* AR Button */}
         <Button
           onClick={() => navigate('/ar')}
           className="w-full h-12 rounded-xl font-semibold gap-2 text-base"

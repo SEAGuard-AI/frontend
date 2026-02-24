@@ -106,7 +106,7 @@ const ContactsPage = () => {
                   <span className="text-xs text-muted-foreground">{contact.distance}</span>
                   <span className={cn(
                     'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
-                    contact.status === 'active' ? 'bg-zone-safe/20 text-zone-safe' : 'bg-zone-danger/20 text-zone-danger'
+                    contact.status === 'active' ? 'bg-zone-evacuation/20 text-zone-evacuation' : 'bg-zone-danger/20 text-zone-danger'
                   )}>
                     {contact.status}
                   </span>
