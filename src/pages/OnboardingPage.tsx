@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Map, Bell, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,20 +37,39 @@ const slides = [
 const OnboardingPage = () => {
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
+  const touchStartX = useRef<number | null>(null);
 
   const isLast = current === slides.length - 1;
   const slide = slides[current];
   const Icon = slide.icon;
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && current < slides.length - 1) {
+        setCurrent(c => c + 1);
+      } else if (diff < 0 && current > 0) {
+        setCurrent(c => c - 1);
+      }
+    }
+    touchStartX.current = null;
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-background px-6 py-12">
-      <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8">
-        {/* Icon */}
+    <div
+      className="flex min-h-screen flex-col bg-background px-6 py-12 select-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 transition-opacity duration-300">
         <div className={`flex h-24 w-24 items-center justify-center rounded-3xl bg-card border border-border ${slide.accent}`}>
           <Icon className="h-12 w-12" />
         </div>
-
-        {/* Content */}
         <div className="space-y-3 max-w-xs">
           <h1 className="text-3xl font-bold text-foreground">{slide.title}</h1>
           <p className={`text-sm font-medium ${slide.accent}`}>{slide.subtitle}</p>

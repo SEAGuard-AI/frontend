@@ -16,6 +16,8 @@ import ContactsPage from "@/pages/ContactsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import EvacuationPage from "@/pages/EvacuationPage";
 import ARNavigationPage from "@/pages/ARNavigationPage";
+import CountryDetailPage from "@/pages/CountryDetailPage";
+import GuideDetailPage from "@/pages/GuideDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +57,8 @@ const AppRoutes = () => (
       <Route path="/alerts" element={<AlertsPage />} />
       <Route path="/contacts" element={<ContactsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/country/:name" element={<CountryDetailPage />} />
+      <Route path="/guide/:id" element={<GuideDetailPage />} />
     </Route>
     <Route path="/evacuation" element={<ProtectedRoute><EvacuationPage /></ProtectedRoute>} />
     <Route path="/ar" element={<ProtectedRoute><ARNavigationPage /></ProtectedRoute>} />
