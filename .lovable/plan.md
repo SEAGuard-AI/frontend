@@ -1,111 +1,109 @@
 
 
-# 🚁 ASEAN Disaster Response & Recovery System (ADRRS)
+# Revision Plan for ADRRS
 
-## Overview
-A mobile-first PWA that serves as an integrated disaster response platform for ASEAN communities, combining real-time disaster mapping, early warning notifications, AR-guided evacuation, and emergency contacts — all with clean, panic-proof UX designed for emergency situations.
+## Changes Overview
 
-**Language:** English | **Platform:** PWA (installable from browser) | **Data:** Mock/simulated for prototype
-
----
-
-## 📱 App Flow & Pages
-
-### 1. Authentication
-- Clean login/signup screen with ADRRS branding
-- Simple email + password auth (mock for now)
-- "Guest access" option for emergency situations where sign-up is a barrier
-
-### 2. Home — Live Disaster Map (Main Screen)
-The heart of the app. Opens immediately to a **Mapbox GL** full-screen map centered on the user's current GPS location.
-
-**Map Features:**
-- **Color-coded zones** overlaid as polygons:
-  - 🟢 **Green — Safe Zone:** No immediate threat, evacuation shelters located here
-  - 🟡 **Yellow — Alert/Caution:** Potential threat developing, stay vigilant
-  - 🟠 **Orange — Warning:** High risk, prepare to evacuate
-  - 🔴 **Red — Danger:** Active disaster, evacuate immediately
-- **Drone-detected population clusters** shown as marker pins with crowd count badges
-- **Heatmap layer toggle** showing population density concentration
-- **Disaster type icons** (flood 🌊, landslide ⛰️) on affected areas
-- Tappable markers that open a **bottom sheet** with:
-  - Area overview (estimated people count, disaster type, severity)
-  - Drone snapshot photo of the area
-  - Location name & coordinates
-  - Assigned SAR team contact info
-- **Region switcher** to browse disaster conditions in other ASEAN countries (dropdown or search)
-- Disaster type filter (floods, landslides)
-
-### 3. Early Warning & Notifications
-- **Notification center** (bell icon) listing all alerts chronologically
-- Alert levels clearly visualized:
-  - **Level 1 (Siaga 1):** Information — monitor situation
-  - **Level 2 (Siaga 2):** Warning — prepare to evacuate
-  - **Level 3 (Siaga 3):** Critical — evacuate now
-- Each alert card shows: disaster type, affected area, time, recommended action
-- Push notification simulation with toast/banner alerts
-- Links to evacuation routes from each alert
-
-### 4. Evacuation Routes & AR Navigation
-**Evacuation Map View:**
-- Map showing available evacuation routes from user's current position to nearest safe zones
-- Routes color-coded by safety: green (safest), yellow (caution), red (avoid)
-- Estimated walking/driving time for each route
-- Nearest shelters, hospitals, rally points marked
-
-**AR Camera View (activated from route):**
-- "Start AR Guide" button launches device camera
-- Compass + GPS-based directional arrows overlaid on camera feed
-- Color-coded ground zones projected ahead:
-  - Green path overlay = safe direction
-  - Yellow = proceed with caution
-  - Red = do not proceed
-- Distance to next waypoint and destination shown
-- Large, clear directional indicators designed for stress situations
-
-### 5. Disaster Reports & Education Hub
-- Overview cards of currently affected regions across ASEAN
-- Each card shows: country, disaster type, severity, date, affected population estimate
-- Tappable for detailed report with timeline of events
-- Educational section with:
-  - "What to do during a flood" quick guides
-  - "Landslide warning signs" infographics
-  - Emergency preparedness checklist
-- Simple, scannable content — icons + short text, no walls of text
-
-### 6. Emergency Contacts
-- Dedicated page with one-tap call buttons
-- Categories: SAR Teams, Ambulance, Police, Fire Department, Hospitals
-- Automatically shows contacts nearest to user's location
-- Each contact shows: name, distance, phone number, status (active/busy)
-- "SOS" prominent button that alerts nearest emergency services
-
-### 7. User Profile & Status
-- User's current location status: "You are in a **Yellow (Alert)** zone"
-- Personal safety status indicator
-- Registered family members / emergency contacts
-- Notification preferences
-- Evacuation history
-- Language preference (for future multi-language support)
+There are 6 distinct revisions to implement across multiple files. Here's the plan:
 
 ---
 
-## 🧭 Navigation
-- **Bottom tab bar** with 4 tabs: Map | Alerts | Contacts | Profile
-- AR and Reports accessible from contextual buttons within Map and Alerts
-- Large touch targets, high contrast — optimized for one-handed emergency use
+## 1. Onboarding Page — Swipeable Slides
 
-## 🎨 Design Principles
-- **Dark-mode default** for battery saving and outdoor visibility
-- High contrast colors, large fonts
-- Minimal cognitive load — every screen has one clear primary action
-- Emergency-red accent for critical actions
-- Smooth but fast transitions (no unnecessary animations)
+**Problem:** Users can't swipe between slides manually; only button-based navigation exists.
 
-## 🔧 Technical Approach
-- Mapbox GL JS for all map features (zones, markers, heatmaps, routes)
-- Device camera + compass/gyroscope APIs for AR overlay (WebRTC + DeviceOrientation)
-- All data mocked with realistic ASEAN geography
-- PWA setup with service worker for offline capability
-- Mobile-optimized responsive design throughout
+**Solution:** Add touch gesture support (swipe left/right) using `touchstart`/`touchend` event listeners on the slide container. Track touch X coordinates and trigger `setCurrent` accordingly. Keep the dots and buttons as-is.
+
+**File:** `src/pages/OnboardingPage.tsx`
+- Add `onTouchStart`/`onTouchEnd` handlers with a 50px swipe threshold
+- Animate slide transitions with CSS transition on opacity/transform
+
+---
+
+## 2. Homepage UI Overhaul — Visual, Image-Rich, Better Color Balance
+
+**Problem:** Homepage is text-heavy, monotonous dark cards, no images, visually dull.
+
+**Solution:** Complete visual redesign of `HomePage.tsx`:
+
+- **News cards:** Add prominent image thumbnails (using Unsplash placeholder URLs for disaster-related images). Local news gets a hero-style card with large image; global news uses horizontal image+text cards.
+- **Section differentiation:** Use distinct background accent bands — e.g., danger-tinted section for critical alerts, dark neutral for news, subtle colored headers per segment.
+- **Risk Forecast:** Change from vertical stacked cards to a **horizontal scrollable row** of compact country cards with flag, risk indicator, and brief text.
+- **ASEAN Status grid:** When a country is tapped, navigate to a **new dedicated page** (`/country/:name`) instead of a bottom sheet.
+- **Survival Guide:** When tapped, navigate to a **new dedicated page** (`/guide/:id`) with WikiHow-style step-by-step layout (step number → image placeholder → instruction text).
+- **Overall:** Better spacing, section dividers, accent color bands for visual rhythm.
+
+**Files:**
+- `src/pages/HomePage.tsx` — Major rewrite
+- `src/data/mockData.ts` — Add real-looking placeholder image URLs to `disasterNews`, add `imageUrl` fields to `survivalTips` steps
+
+---
+
+## 3. New Country Detail Page (`/country/:name`)
+
+**Problem:** Clicking a country in ASEAN Status opens a bottom sheet. User wants a full page with overview, related news, and a map segment linking to the Map page.
+
+**Solution:** Create `src/pages/CountryDetailPage.tsx`:
+- Country flag + name header with alert level badge
+- Stats cards (active disasters, affected population)
+- Recent events timeline
+- Risk forecast section
+- Related news cards (filtered from `disasterNews`)
+- **Mini map preview** (small static Leaflet map showing the country's disaster zones) with a "View Full Map" button that navigates to `/map` (could set a query param or context to auto-center on that country)
+- Back button navigation
+
+**Files:**
+- `src/pages/CountryDetailPage.tsx` — New file
+- `src/App.tsx` — Add route `/country/:name`
+
+---
+
+## 4. New Survival Guide Detail Page (`/guide/:id`)
+
+**Problem:** Survival tips expand inline as small text. User wants WikiHow-style step pages with images.
+
+**Solution:** Create `src/pages/GuideDetailPage.tsx`:
+- Full-page layout with guide title and icon
+- Each step rendered as a numbered card: step number badge → placeholder illustration image → instruction text
+- Clean, scannable layout with generous spacing
+- Back button
+
+**Files:**
+- `src/pages/GuideDetailPage.tsx` — New file
+- `src/data/mockData.ts` — Add `imageUrl` to each step in `survivalTips`
+- `src/App.tsx` — Add route `/guide/:id`
+
+---
+
+## 5. Profile Page — Richer Status with Mini Map & Evacuation CTA
+
+**Problem:** Profile page is sparse. Needs location visualization and actionable guidance.
+
+**Solution:** Enhance `ProfilePage.tsx`:
+- **Mini Leaflet map** (200px height) showing user's current position with the surrounding zone colored by status level
+- **Status card** with zone level prominently displayed, zone name, and description
+- If status is `caution` or `danger`: show a prominent **"Get Evacuation Guide"** button (styled in zone color) that navigates to `/evacuation` → AR flow
+- Keep existing stats grid and logout button
+- Add emergency contacts summary (nearest 2 contacts with one-tap call)
+
+**File:** `src/pages/ProfilePage.tsx`
+
+---
+
+## 6. Risk Forecast — Horizontal Scroll Layout
+
+**Problem:** Risk forecast is vertical stacked cards, looks generic.
+
+**Solution:** In `HomePage.tsx`, render forecast as a horizontal scrollable strip of compact cards. Each card shows: country flag (large), country name, disaster type icon, a colored risk bar/indicator, and 1-line prediction text. Cards have subtle gradient backgrounds based on alert level.
+
+**File:** Already part of the HomePage rewrite (item 2).
+
+---
+
+## Technical Notes
+
+- New Leaflet mini-maps (Profile, Country Detail) will be small embedded maps initialized with `zoomControl: false`, `dragging: false`, `scrollWheelZoom: false` for a static preview feel.
+- Image URLs will use Unsplash source URLs (`https://images.unsplash.com/...`) with disaster/nature themes as realistic placeholders.
+- New routes added to `App.tsx` will be inside the `ProtectedRoute > SetupGuard > AppLayout` wrapper.
+- Touch swipe uses vanilla JS touch events — no additional dependency needed.
 
