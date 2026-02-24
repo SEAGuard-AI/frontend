@@ -36,9 +36,8 @@
     --radius: 0.75rem;
 
     /* Zone colors */
-    --zone-safe: 142 70% 45%;
+    --zone-evacuation: 142 70% 45%;
     --zone-caution: 45 95% 55%;
-    --zone-warning: 25 95% 55%;
     --zone-danger: 0 85% 55%;
 
     /* Status */

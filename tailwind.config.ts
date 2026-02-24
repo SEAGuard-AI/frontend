@@ -46,9 +46,8 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         zone: {
-          safe: "hsl(var(--zone-safe))",
+          evacuation: "hsl(var(--zone-evacuation))",
           caution: "hsl(var(--zone-caution))",
-          warning: "hsl(var(--zone-warning))",
           danger: "hsl(var(--zone-danger))",
         },
         sidebar: {
