@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserPreferencesProvider, usePreferences } from "@/contexts/UserPreferencesContext";
+import { TranslationProvider } from "@/contexts/TranslationContext";
 import AppLayout from "@/components/AppLayout";
 import OnboardingPage from "@/pages/OnboardingPage";
 import LoginPage from "@/pages/LoginPage";
@@ -18,6 +19,7 @@ import EvacuationPage from "@/pages/EvacuationPage";
 import ARNavigationPage from "@/pages/ARNavigationPage";
 import CountryDetailPage from "@/pages/CountryDetailPage";
 import GuideDetailPage from "@/pages/GuideDetailPage";
+import NewsDetailPage from "@/pages/NewsDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,7 @@ const AppRoutes = () => (
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/country/:name" element={<CountryDetailPage />} />
       <Route path="/guide/:id" element={<GuideDetailPage />} />
+      <Route path="/news/:id" element={<NewsDetailPage />} />
     </Route>
     <Route path="/evacuation" element={<ProtectedRoute><EvacuationPage /></ProtectedRoute>} />
     <Route path="/ar" element={<ProtectedRoute><ARNavigationPage /></ProtectedRoute>} />
@@ -73,9 +76,11 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <UserPreferencesProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <TranslationProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TranslationProvider>
         </UserPreferencesProvider>
       </AuthProvider>
     </TooltipProvider>

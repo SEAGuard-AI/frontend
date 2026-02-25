@@ -76,6 +76,7 @@ export interface DisasterNews {
   disasterType: DisasterType;
   isGlobal: boolean;
   videoUrl?: string;
+  sourceUrl?: string;
 }
 
 export interface CountryStatus {
@@ -299,36 +300,42 @@ export const disasterNews: DisasterNews[] = [
     summary: 'North Jakarta residents evacuated as Ciliwung River overflows. BASARNAS deploys drone surveillance for population mapping and rescue coordination.',
     source: 'BNPB Indonesia', date: '2026-02-24', imageUrl: '/placeholder.svg',
     country: 'Indonesia', disasterType: 'flood', isGlobal: false,
+    sourceUrl: 'https://bnpb.go.id',
   },
   {
     id: 'n2', title: 'Typhoon Nearing Vietnam Coast — Evacuations Underway',
     summary: 'Category 3 typhoon expected to make landfall near Da Nang. Over 8,000 residents relocated to inland evacuation centers.',
     source: 'Vietnam PCTT', date: '2026-02-24', imageUrl: '/placeholder.svg',
     country: 'Vietnam', disasterType: 'typhoon', isGlobal: false,
+    sourceUrl: 'https://phongchongthientai.mard.gov.vn',
   },
   {
     id: 'n3', title: 'ASEAN Disaster Risk Index 2026 Released',
     summary: 'New report highlights increasing flood and typhoon risks across Southeast Asia. Indonesia, Philippines, and Vietnam ranked as highest risk.',
     source: 'AHA Centre', date: '2026-02-23', imageUrl: '/placeholder.svg',
     country: '', disasterType: 'flood', isGlobal: true,
+    sourceUrl: 'https://ahacentre.org',
   },
   {
     id: 'n4', title: 'Landslide Claims Lives in Rizal Province',
     summary: 'Heavy monsoon rains trigger devastating landslide in Rizal. NDRRMC rescue teams continue search operations.',
     source: 'NDRRMC Philippines', date: '2026-02-22', imageUrl: '/placeholder.svg',
     country: 'Philippines', disasterType: 'landslide', isGlobal: false,
+    sourceUrl: 'https://ndrrmc.gov.ph',
   },
   {
     id: 'n5', title: 'UN Warns of Increased Disaster Frequency in Asia-Pacific',
     summary: 'United Nations report projects 40% increase in extreme weather events across Asia-Pacific by 2030, urging immediate preparedness measures.',
     source: 'UN OCHA', date: '2026-02-21', imageUrl: '/placeholder.svg',
     country: '', disasterType: 'flood', isGlobal: true,
+    sourceUrl: 'https://www.unocha.org',
   },
   {
     id: 'n6', title: 'Bangkok Flood Barriers Tested as River Levels Rise',
     summary: 'Bangkok authorities activate flood barrier systems along Chao Phraya River. Residents advised to monitor official channels.',
     source: 'Thai DDPM', date: '2026-02-23', imageUrl: '/placeholder.svg',
     country: 'Thailand', disasterType: 'flood', isGlobal: false,
+    sourceUrl: 'https://www.disaster.go.th',
   },
 ];
 
