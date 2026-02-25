@@ -4,6 +4,7 @@ import {
   disasterZones, countryDefaultCenters
 } from '@/data/mockData';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { usePreferences } from '@/contexts/UserPreferencesContext';
 import { ArrowLeft, AlertTriangle, Users, MapPin, ChevronRight, Activity, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import L from 'leaflet';
@@ -35,6 +36,7 @@ const CountryDetailPage = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
   const country = decodeURIComponent(name || '');
 
   const status = countryStatuses.find(s => s.country === country);
@@ -69,7 +71,10 @@ const CountryDetailPage = () => {
       attributionControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    const tileUrl = preferences.theme === 'dark'
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    L.tileLayer(tileUrl).addTo(map);
 
     countryZones.forEach(zone => {
       L.circle(zone.center, {
@@ -89,7 +94,7 @@ const CountryDetailPage = () => {
         miniMapInstance.current = null;
       }
     };
-  }, [center, countryZones.length, status]);
+  }, [center, countryZones.length, status, preferences.theme]);
 
   if (!status) {
     return (
