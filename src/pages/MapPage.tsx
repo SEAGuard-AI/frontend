@@ -278,11 +278,6 @@ const MapPage = () => {
 
             <div className="flex gap-3">
               <div className="flex-1 rounded-lg bg-secondary p-3 text-center">
-                <Users className="h-5 w-5 mx-auto text-foreground mb-1" />
-                <p className="text-lg font-bold text-foreground">{selectedCluster.count}</p>
-                <p className="text-[10px] text-muted-foreground">People Detected</p>
-              </div>
-              <div className="flex-1 rounded-lg bg-secondary p-3 text-center">
                 <span className="text-2xl">{selectedCluster.disasterType === 'flood' ? '🌊' : selectedCluster.disasterType === 'typhoon' ? '🌀' : '⛰️'}</span>
                 <p className="text-sm font-medium text-foreground capitalize">{selectedCluster.disasterType}</p>
                 <p className="text-[10px] text-muted-foreground">Disaster Type</p>
