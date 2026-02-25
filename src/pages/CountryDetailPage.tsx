@@ -6,8 +6,9 @@ import {
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ArrowLeft, AlertTriangle, Users, MapPin, ChevronRight, Activity, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MapContainer, TileLayer, Circle } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useRef, useEffect } from 'react';
 
 const zoneColors: Record<string, string> = {
   evacuation: 'hsl(var(--zone-evacuation))',
@@ -29,6 +30,8 @@ const newsImages: Record<string, string> = {
 };
 
 const CountryDetailPage = () => {
+  const miniMapRef = useRef<HTMLDivElement>(null);
+  const miniMapInstance = useRef<L.Map | null>(null);
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -45,6 +48,48 @@ const CountryDetailPage = () => {
     if (level === 'caution') return t('caution');
     return t('critical');
   };
+
+  // Imperative Leaflet mini-map — must be before any early return
+  useEffect(() => {
+    if (!miniMapRef.current || !status) return;
+
+    if (miniMapInstance.current) {
+      miniMapInstance.current.remove();
+      miniMapInstance.current = null;
+    }
+
+    const map = L.map(miniMapRef.current, {
+      center: center as [number, number],
+      zoom: countryZones.length > 0 ? 11 : 6,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    countryZones.forEach(zone => {
+      L.circle(zone.center, {
+        radius: zone.radius,
+        color: zoneHex[zone.level],
+        fillColor: zoneHex[zone.level],
+        fillOpacity: 0.25,
+        weight: 2,
+      }).addTo(map);
+    });
+
+    miniMapInstance.current = map;
+
+    return () => {
+      if (miniMapInstance.current) {
+        miniMapInstance.current.remove();
+        miniMapInstance.current = null;
+      }
+    };
+  }, [center, countryZones.length, status]);
 
   if (!status) {
     return (
@@ -118,33 +163,8 @@ const CountryDetailPage = () => {
       {/* Mini Map */}
       <section className="px-4 mt-5">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('disaster_map')}</h2>
-        <div className="rounded-xl overflow-hidden border border-border h-44">
-          <MapContainer
-            center={center}
-            zoom={countryZones.length > 0 ? 11 : 6}
-            zoomControl={false}
-            dragging={false}
-            scrollWheelZoom={false}
-            doubleClickZoom={false}
-            touchZoom={false}
-            attributionControl={false}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-            {countryZones.map(zone => (
-              <Circle
-                key={zone.id}
-                center={zone.center}
-                radius={zone.radius}
-                pathOptions={{
-                  color: zoneHex[zone.level],
-                  fillColor: zoneHex[zone.level],
-                  fillOpacity: 0.25,
-                  weight: 2,
-                }}
-              />
-            ))}
-          </MapContainer>
+        <div className="rounded-xl overflow-hidden border border-border">
+          <div ref={miniMapRef} className="h-44 w-full" />
         </div>
         <Button
           variant="outline"

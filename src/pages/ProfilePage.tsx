@@ -4,14 +4,13 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useNavigate } from 'react-router-dom';
 import {
   disasterZones, alerts, countryFlags, emergencyContacts,
-  countryDefaultCenters, aseanLanguages, aseanCountries, type ZoneLevel
+  countryDefaultCenters, aseanLanguages, type ZoneLevel
 } from '@/data/mockData';
 import {
-  User, LogOut, Bell, MapPin, Navigation, Phone, Edit2, Share2, Globe, ChevronRight, Shield
+  User, LogOut, Bell, MapPin, Navigation, Phone, Edit2, Share2, Globe, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { MapContainer, TileLayer, Circle, Marker } from 'react-leaflet';
+import { useState, useRef, useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -27,13 +26,6 @@ const zoneHex: Record<ZoneLevel, string> = {
   danger: '#dc2626',
 };
 
-const userIcon = L.divIcon({
-  className: '',
-  html: '<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 8px rgba(59,130,246,0.6)"></div>',
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
-
 const ProfilePage = () => {
   const { user, logout } = useAuth();
   const { preferences, setLanguage, setLocation } = usePreferences();
@@ -43,6 +35,9 @@ const ProfilePage = () => {
   const [editingLocation, setEditingLocation] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
 
   const userCountry = preferences.country || 'Indonesia';
   const userZone = disasterZones.find(z => z.level === 'caution' && z.country === userCountry)
@@ -62,6 +57,59 @@ const ProfilePage = () => {
     name: lang.name,
     nativeName: lang.nativeName,
   }));
+
+  // Imperative Leaflet map
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clean up previous instance
+    if (mapInstance.current) {
+      mapInstance.current.remove();
+      mapInstance.current = null;
+    }
+
+    const map = L.map(mapRef.current, {
+      center,
+      zoom: 13,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    // Add zone circles
+    nearbyZones.forEach(zone => {
+      L.circle(zone.center, {
+        radius: zone.radius,
+        color: zoneHex[zone.level],
+        fillColor: zoneHex[zone.level],
+        fillOpacity: 0.2,
+        weight: 2,
+      }).addTo(map);
+    });
+
+    // Add user marker
+    const userIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 8px rgba(59,130,246,0.6)"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    L.marker(center, { icon: userIcon }).addTo(map);
+
+    mapInstance.current = map;
+
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+    };
+  }, [center[0], center[1], nearbyZones.length]);
 
   const searchLocation = async (query: string) => {
     if (query.length < 3) return;
@@ -145,36 +193,7 @@ const ProfilePage = () => {
 
         {/* Mini Map */}
         <div className="rounded-xl overflow-hidden border border-border">
-          <div className="h-44">
-            <MapContainer
-              key={`${center[0]}-${center[1]}`}
-              center={center}
-              zoom={13}
-              zoomControl={false}
-              dragging={false}
-              scrollWheelZoom={false}
-              doubleClickZoom={false}
-              touchZoom={false}
-              attributionControl={false}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              {nearbyZones.map(zone => (
-                <Circle
-                  key={zone.id}
-                  center={zone.center}
-                  radius={zone.radius}
-                  pathOptions={{
-                    color: zoneHex[zone.level],
-                    fillColor: zoneHex[zone.level],
-                    fillOpacity: 0.2,
-                    weight: 2,
-                  }}
-                />
-              ))}
-              <Marker position={center} icon={userIcon} />
-            </MapContainer>
-          </div>
+          <div ref={mapRef} className="h-44 w-full" />
         </div>
 
         {/* Current Status */}
@@ -267,7 +286,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-2 gap-1.5">
               {availableLanguages.map(lang => (
                 <button
-                  key={lang.name}
+                  key={lang.country}
                   onClick={() => setLanguage(lang.name)}
                   className={`text-left rounded-lg px-3 py-2 text-xs transition-colors ${
                     currentLangName === lang.name
