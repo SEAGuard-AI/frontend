@@ -31,7 +31,7 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
     language: '',
     setupComplete: false,
     location: null,
-    theme: 'light',
+    theme: 'dark',
   });
 
   // Sync .dark class on <html>
