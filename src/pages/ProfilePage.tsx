@@ -7,7 +7,7 @@ import {
   countryDefaultCenters, aseanLanguages, type ZoneLevel
 } from '@/data/mockData';
 import {
-  User, LogOut, Bell, MapPin, Navigation, Phone, Edit2, Share2, Globe, Shield
+  User, LogOut, Bell, MapPin, Navigation, Phone, Edit2, Share2, Globe, Shield, Sun, Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
@@ -28,7 +28,7 @@ const zoneHex: Record<ZoneLevel, string> = {
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
-  const { preferences, setLanguage, setLocation } = usePreferences();
+  const { preferences, setLanguage, setLocation, setTheme } = usePreferences();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -79,7 +79,10 @@ const ProfilePage = () => {
       attributionControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    const tileUrl = preferences.theme === 'dark'
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    L.tileLayer(tileUrl).addTo(map);
 
     // Add zone circles
     nearbyZones.forEach(zone => {
@@ -109,7 +112,7 @@ const ProfilePage = () => {
         mapInstance.current = null;
       }
     };
-  }, [center[0], center[1], nearbyZones.length]);
+  }, [center[0], center[1], nearbyZones.length, preferences.theme]);
 
   const searchLocation = async (query: string) => {
     if (query.length < 3) return;
@@ -276,6 +279,28 @@ const ProfilePage = () => {
         {/* Settings Section */}
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings')}</p>
+
+          {/* Theme Toggle */}
+          <div className="rounded-xl bg-card border border-border p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {preferences.theme === 'dark' ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
+                <span className="text-sm font-medium text-foreground">
+                  {preferences.theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                </span>
+              </div>
+              <button
+                onClick={() => setTheme(preferences.theme === 'dark' ? 'light' : 'dark')}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                style={{ background: preferences.theme === 'dark' ? 'hsl(var(--primary))' : 'hsl(var(--border))' }}
+              >
+                <span
+                  className="inline-block h-4 w-4 rounded-full bg-white transition-transform shadow-sm"
+                  style={{ transform: preferences.theme === 'dark' ? 'translateX(24px)' : 'translateX(4px)' }}
+                />
+              </button>
+            </div>
+          </div>
 
           {/* Language Selector */}
           <div className="rounded-xl bg-card border border-border p-3 space-y-2">
