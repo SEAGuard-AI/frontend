@@ -1,81 +1,77 @@
 
 
-# Fix Plan: Profile Page Crash, Country Detail Crash, and Feature Additions
+# Light & Dark Mode with Solar Color Palette
 
-## Root Cause Analysis
+## Overview
 
-The Profile page and Country Detail page both crash with a fatal React error:
-```
-TypeError: render2 is not a function (at updateContextConsumer)
-```
+Add a light/dark theme system. Light mode (default) uses the solar gold palette (#f4bf3a family) with white backgrounds. Dark mode converts whites to dark greys. Theme toggle lives in Profile settings.
 
-This is caused by **`react-leaflet`'s declarative components** (`MapContainer`, `TileLayer`, `Circle`, `Marker`) being incompatible with React 18. The `MapContainer` internally uses a legacy React context consumer pattern that crashes the entire React tree.
+## Color Mapping
 
-**Proof:** `MapPage.tsx` and `EvacuationPage.tsx` work perfectly because they use Leaflet directly via `useRef` + `useEffect` (imperative API). `ProfilePage.tsx` and `CountryDetailPage.tsx` both import `MapContainer` from `react-leaflet` and crash.
+### Light Theme (Default) — Solar Palette + White
+Using the uploaded palette centered on `#f4bf3a`:
 
----
+| Token | Value | Source |
+|-------|-------|--------|
+| background | white `0 0% 100%` | white base |
+| foreground | `40 10% 10%` | dark olive from palette (#1e1601) |
+| card | `45 60% 97%` | very light cream (#fefbf3) |
+| card-foreground | `40 10% 10%` | dark olive |
+| primary | `43 88% 59%` | hero gold (#f4bf3a) |
+| primary-foreground | `40 20% 10%` | dark brown text on gold |
+| secondary | `44 70% 93%` | light cream (#fdf3dc) |
+| muted | `44 50% 94%` | pale cream (#fcf1d4) |
+| muted-foreground | `40 15% 40%` | medium olive (#8b6507) |
+| accent | `44 80% 90%` | warm cream (#fae7b5) |
+| border | `43 40% 85%` | (#f1b213 lightened) |
+| input | `43 40% 88%` | light gold border |
+| ring | `43 88% 59%` | gold |
+| destructive | `0 85% 55%` | keep red for emergencies |
 
-## Changes Required
+### Dark Theme — Solar + Dark Grey
+Same hue family but with dark grey backgrounds:
 
-### 1. Fix ProfilePage.tsx (Critical - Crash Fix + Content)
+| Token | Value |
+|-------|-------|
+| background | `40 8% 8%` | very dark warm grey |
+| foreground | `44 60% 90%` | light gold text |
+| card | `40 8% 12%` | dark warm card |
+| primary | `43 88% 55%` | gold (slightly toned down) |
+| secondary | `40 10% 16%` | dark warm grey |
+| muted | `40 8% 14%` | dark muted |
+| muted-foreground | `40 20% 50%` | medium warm grey |
+| border | `40 10% 20%` | dark warm border |
 
-**Problem:** Blank page due to `react-leaflet` `MapContainer` crash.
+## Files Modified
 
-**Fix:** Rewrite the mini-map to use imperative Leaflet API (same pattern as MapPage.tsx), wrapped in a `useRef` div + `useEffect` that creates/destroys the map instance.
+### 1. `src/index.css`
+- Change `:root` to light theme (solar palette + white)
+- Add `.dark` class with dark theme (solar palette + dark grey)
+- Update Leaflet overrides to use CSS variables instead of hardcoded dark colors
+- Add `.dark .leaflet-*` overrides for dark tile styling
 
-**Content that will be present after fix:**
-- User info section (name, email, country)
-- Location display with address, coordinates, Edit Location button, Share Location button
-- Location search panel (Nominatim API) when editing
-- Mini Leaflet map (imperative, 176px height) showing user position marker + nearby zone circles
-- Current status card (Safe/Caution/Danger with zone color, description)
-- Evacuation Guide CTA button (visible only when caution/danger)
-- Quick stats grid (unread alerts, active zones, shelters)
-- Nearest emergency contacts (2 contacts with one-tap call)
-- Language switcher (all 6 ASEAN languages, grid layout)
-- Sign Out button
+### 2. `src/contexts/UserPreferencesContext.tsx`
+- Add `theme: 'light' | 'dark'` to preferences (default: `'light'`)
+- Add `setTheme()` method
+- Apply/remove `.dark` class on `document.documentElement` via `useEffect`
 
-**Share Location:** Uses `navigator.share()` with Google Maps link fallback to clipboard copy.
+### 3. `src/pages/ProfilePage.tsx`
+- Add a theme toggle (Sun/Moon icons) in the Settings section, before language selector
+- Uses `usePreferences().setTheme()` to switch
 
-**Edit Location:** Auto-syncs the country preference based on reverse geocoding the new coordinates.
+### 4. `src/pages/MapPage.tsx`
+- Change tile URL to be theme-aware: light mode uses `carto/light_all`, dark uses `carto/dark_all`
+- Read theme from preferences context
 
-### 2. Fix CountryDetailPage.tsx (Critical - Crash Fix)
+### 5. `src/pages/CountryDetailPage.tsx`
+- Same tile URL adjustment for mini-map
 
-**Problem:** Same `MapContainer` crash causes blank page when clicking any country from ASEAN Status.
+### 6. `src/components/AppLayout.tsx`
+- No structural changes needed; colors already use CSS variables
 
-**Fix:** Rewrite the mini-map section to use imperative Leaflet API. Keep all existing content (header, stats, forecast, recent events, map, related news, reports).
-
-### 3. Minor Fixes
-
-- **Duplicate key warning:** The language selector in ProfilePage uses `lang.name` as key, but Malaysia and Brunei both have `name: 'Malay'`. Fix by using `lang.country` (from the mapping) or a unique identifier instead.
-
----
-
-## Technical Approach
-
-Both mini-maps will follow this pattern (already proven working in MapPage.tsx):
-
-```text
-const mapRef = useRef<HTMLDivElement>(null);
-const mapInstance = useRef<L.Map | null>(null);
-
-useEffect(() => {
-  if (!mapRef.current || mapInstance.current) return;
-  const map = L.map(mapRef.current, { center, zoom, zoomControl: false, ... });
-  L.tileLayer(darkTileUrl).addTo(map);
-  // Add circles, markers imperatively
-  mapInstance.current = map;
-  return () => { map.remove(); mapInstance.current = null; };
-}, [center]);
-
-<div ref={mapRef} className="h-44 w-full" />
-```
-
-No imports from `react-leaflet` will be used. Only `leaflet` directly.
-
-### Files Modified
-- `src/pages/ProfilePage.tsx` -- Remove `react-leaflet` imports, rewrite map to imperative Leaflet, fix duplicate key
-- `src/pages/CountryDetailPage.tsx` -- Remove `react-leaflet` imports, rewrite map to imperative Leaflet
-
-No new files or dependencies needed.
+## Technical Notes
+- Using Tailwind's `darkMode: ["class"]` which is already configured
+- `next-themes` is installed but not needed; a simple `useEffect` toggling `.dark` on `<html>` is lighter and avoids hydration complexity
+- Zone colors (evacuation green, caution yellow, danger red) stay consistent across both themes
+- The solar gold primary replaces the emergency red as the primary accent in both themes; destructive stays red
 
