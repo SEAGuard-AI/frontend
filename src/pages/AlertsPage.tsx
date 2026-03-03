@@ -27,7 +27,7 @@ const AlertsPage = () => {
       </div>
 
       <div className="px-4 space-y-3 pb-6">
-        {alertList.map(alert => {
+        {alertList.map((alert, i) => {
           const config = levelConfig[alert.level];
           const Icon = config.icon;
           return (
@@ -35,10 +35,13 @@ const AlertsPage = () => {
               key={alert.id}
               onClick={() => { markRead(alert.id); }}
               className={cn(
-                'w-full rounded-2xl p-4 text-left transition-all',
-                alert.read ? 'bg-card shadow-clay-sm' : 'bg-card shadow-clay border-l-4',
+                'w-full relative p-4 text-left transition-all duration-300 hover:-translate-y-1 active:animate-clay-bounce animate-fade-in',
+                alert.read ? 'clay-sm' : 'clay border-l-4',
               )}
-              style={!alert.read ? { borderLeftColor: config.color } : undefined}
+              style={{
+                ...(!alert.read ? { borderLeftColor: config.color } : {}),
+                animationDelay: `${i * 60}ms`,
+              }}
             >
               <div className="flex items-start gap-3">
                 <div
@@ -78,7 +81,7 @@ const AlertsPage = () => {
                 </div>
               </div>
               {!alert.read && (
-                <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary" />
+                <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary animate-pulse" />
               )}
             </button>
           );

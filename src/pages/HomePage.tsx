@@ -72,7 +72,7 @@ const HomePage = () => {
           </div>
           <button
             onClick={() => openNews(localNews[0])}
-            className="w-full rounded-2xl overflow-hidden bg-card shadow-clay text-left transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
+            className="w-full clay-lg overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay-lg active:animate-clay-bounce"
           >
             <div className="relative h-44 w-full">
               <img src={getNewsImage(localNews[0])} alt={localNews[0].title} className="h-full w-full object-cover" />
@@ -88,8 +88,13 @@ const HomePage = () => {
           </button>
           {localNews.length > 1 && (
             <div className="space-y-2 mt-2">
-              {localNews.slice(1).map(news => (
-                <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card shadow-clay-sm p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-clay">
+              {localNews.slice(1).map((news, i) => (
+                <button
+                  key={news.id}
+                  onClick={() => openNews(news)}
+                  className="w-full flex gap-3 clay-sm p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
                   <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0 py-0.5">
                     <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
@@ -110,12 +115,15 @@ const HomePage = () => {
           <h2 className="text-sm font-bold text-foreground">{t('risk_forecast')}</h2>
         </div>
         <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
-          {sortedStatuses.filter(s => s.prediction).slice(0, 6).map(s => (
+          {sortedStatuses.filter(s => s.prediction).slice(0, 6).map((s, i) => (
             <button
               key={s.country}
               onClick={() => navigate(`/country/${encodeURIComponent(s.country)}`)}
-              className="shrink-0 w-36 snap-start rounded-2xl p-3 relative overflow-hidden text-left shadow-clay-sm transition-all hover:-translate-y-0.5 hover:shadow-clay"
-              style={{ background: `linear-gradient(135deg, ${zoneColors[s.alertLevel]}15, hsl(var(--card)))` }}
+              className="shrink-0 w-36 snap-start clay-sm p-3 relative overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
+              style={{
+                background: `linear-gradient(135deg, ${zoneColors[s.alertLevel]}15, hsl(var(--card)))`,
+                animationDelay: `${i * 60}ms`,
+              }}
             >
               <div className="absolute top-0 right-0 h-12 w-12 rounded-bl-full opacity-20"
                 style={{ background: zoneColors[s.alertLevel] }} />
@@ -140,11 +148,12 @@ const HomePage = () => {
           <h2 className="text-sm font-bold text-foreground">{t('asean_status')}</h2>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-          {sortedStatuses.map(status => (
+          {sortedStatuses.map((status, i) => (
             <button
               key={status.country}
               onClick={() => navigate(`/country/${encodeURIComponent(status.country)}`)}
-              className="rounded-2xl bg-card shadow-clay-sm p-3 text-left hover:-translate-y-0.5 hover:shadow-clay transition-all"
+              className="clay-sm p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{countryFlags[status.country]}</span>
@@ -171,14 +180,19 @@ const HomePage = () => {
       </section>
 
       {/* Global News */}
-      <section className="mt-6 bg-secondary/50 py-5">
-        <div className="flex items-center gap-2 mb-3 px-4">
+      <section className="mt-6 mx-4 clay-lg p-4">
+        <div className="flex items-center gap-2 mb-3">
           <Globe className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">{t('global_alerts')}</h2>
         </div>
-        <div className="space-y-2 px-4">
-          {globalNews.map(news => (
-            <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card shadow-clay-sm p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-clay">
+        <div className="space-y-2">
+          {globalNews.map((news, i) => (
+            <button
+              key={news.id}
+              onClick={() => openNews(news)}
+              className="w-full flex gap-3 rounded-xl bg-muted/50 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-accent active:animate-clay-bounce animate-fade-in"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
               <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-xl object-cover shrink-0" />
               <div className="flex-1 min-w-0 py-0.5">
                 <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
@@ -198,11 +212,12 @@ const HomePage = () => {
           <h2 className="text-sm font-bold text-foreground">{t('survival_guide')}</h2>
         </div>
         <div className="space-y-2">
-          {survivalTips.map(tip => (
+          {survivalTips.map((tip, i) => (
             <button
               key={tip.id}
               onClick={() => navigate(`/guide/${tip.id}`)}
-              className="w-full flex items-center gap-3 rounded-xl bg-card shadow-clay-sm p-3 text-left hover:-translate-y-0.5 hover:shadow-clay transition-all"
+              className="w-full flex items-center gap-3 clay-sm p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
+              style={{ animationDelay: `${i * 60}ms` }}
             >
               <span className="text-2xl">{tip.icon}</span>
               <div className="flex-1">

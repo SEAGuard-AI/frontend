@@ -139,13 +139,13 @@ const MapPage = () => {
           <div className="relative">
             <button
               onClick={() => setShowCountryPicker(!showCountryPicker)}
-              className="flex items-center gap-1.5 rounded-lg bg-card/95 backdrop-blur-sm border border-border px-2.5 py-2 text-sm font-medium text-foreground shadow-lg"
+              className="flex items-center gap-1.5 clay-sm backdrop-blur-sm px-2.5 py-2 text-sm font-medium text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
             >
               <MapPin className="h-4 w-4 text-primary" />
               <ChevronDown className="h-3 w-3" />
             </button>
             {showCountryPicker && (
-              <div className="absolute top-full mt-1 w-48 rounded-lg bg-card border border-border shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+              <div className="absolute top-full mt-1 w-48 clay overflow-hidden max-h-60 overflow-y-auto animate-scale-in">
                 {aseanCountries.map(c => (
                   <button
                     key={c}
@@ -171,22 +171,23 @@ const MapPage = () => {
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
               onFocus={() => setShowSearch(true)}
-              className="w-full rounded-lg bg-card/95 backdrop-blur-sm border border-border pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-lg outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-[var(--radius)] bg-card/95 backdrop-blur-sm shadow-clay-sm px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-border/50"
+              style={{ boxShadow: 'var(--clay-shadow-sm), var(--clay-inner-sm)' }}
             />
           </div>
 
           {/* Filter & Heatmap toggles */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center rounded-lg bg-card/95 backdrop-blur-sm border border-border p-2 shadow-lg text-foreground"
+            className="clay-sm backdrop-blur-sm p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
           >
             <Filter className="h-4 w-4" />
           </button>
           <button
             onClick={() => setShowHeatmap(!showHeatmap)}
             className={cn(
-              'flex items-center rounded-lg backdrop-blur-sm border p-2 shadow-lg',
-              showHeatmap ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-card/95 border-border text-foreground'
+              'backdrop-blur-sm p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
+              showHeatmap ? 'clay-primary text-primary' : 'clay-sm text-foreground hover:shadow-clay'
             )}
           >
             <Layers className="h-4 w-4" />
@@ -195,7 +196,7 @@ const MapPage = () => {
 
         {/* Search Results Dropdown */}
         {showSearch && searchQuery.length >= 2 && (
-          <div className="rounded-lg bg-card border border-border shadow-xl overflow-hidden">
+          <div className="clay overflow-hidden animate-scale-in">
             {isSearching ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">Searching...</div>
             ) : searchResults.length > 0 ? (
@@ -203,7 +204,7 @@ const MapPage = () => {
                 <button
                   key={i}
                   onClick={() => selectSearchResult(r)}
-                  className="w-full px-3 py-2.5 text-left hover:bg-accent transition-colors border-b border-border last:border-0"
+                  className="w-full px-3 py-2.5 text-left hover:bg-accent transition-colors border-b border-border/30 last:border-0"
                 >
                   <p className="text-sm text-foreground truncate">{r.display_name}</p>
                   <p className="text-[10px] text-muted-foreground">{r.type}</p>
@@ -218,15 +219,15 @@ const MapPage = () => {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="absolute top-16 right-4 z-[1000] rounded-lg bg-card border border-border p-3 shadow-xl space-y-2 w-44">
+        <div className="absolute top-16 right-4 z-[1000] clay p-3 space-y-2 w-44 animate-scale-in">
           <p className="text-xs font-medium text-muted-foreground">Disaster Type</p>
           {(['all', 'flood', 'landslide', 'typhoon', 'earthquake'] as const).map(t => (
             <button
               key={t}
               onClick={() => { setFilterType(t as any); setShowFilters(false); }}
               className={cn(
-                'w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors',
-                filterType === t ? 'bg-primary/20 text-primary' : 'hover:bg-accent text-foreground'
+                'w-full rounded-lg px-3 py-1.5 text-left text-sm transition-all',
+                filterType === t ? 'bg-primary/20 text-primary shadow-clay-sm' : 'hover:bg-accent text-foreground'
               )}
             >
               {t === 'all' ? 'All Types' : t === 'flood' ? '🌊 Flood' : t === 'landslide' ? '⛰️ Landslide' : t === 'typhoon' ? '🌀 Typhoon' : '🌍 Earthquake'}
@@ -236,7 +237,7 @@ const MapPage = () => {
       )}
 
       {/* Zone Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] rounded-lg bg-card/95 backdrop-blur-sm border border-border p-3 shadow-lg">
+      <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-sm p-3">
         <p className="text-[10px] font-medium text-muted-foreground mb-1.5">ZONE STATUS</p>
         <div className="space-y-1">
           {(Object.entries(zoneLabels) as [ZoneLevel, string][]).map(([level, label]) => (
@@ -250,7 +251,10 @@ const MapPage = () => {
 
       {/* Evacuation Route Button */}
       <div className="absolute bottom-4 right-4 z-[1000]">
-        <Button onClick={() => navigate('/evacuation')} className="h-12 rounded-xl shadow-lg gap-2 font-semibold">
+        <Button
+          onClick={() => navigate('/evacuation')}
+          className="h-12 rounded-xl clay-primary gap-2 font-semibold transition-all duration-300 hover:-translate-y-1 active:animate-clay-bounce"
+        >
           <Navigation className="h-4 w-4" />
           Evacuate
         </Button>
@@ -259,7 +263,7 @@ const MapPage = () => {
       {/* Bottom Sheet for selected cluster */}
       {selectedCluster && (
         <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
-          <div className="rounded-t-2xl bg-card border-t border-border p-4 shadow-2xl space-y-3">
+          <div className="clay-lg rounded-b-none p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -271,20 +275,20 @@ const MapPage = () => {
                 <h3 className="text-lg font-bold text-foreground mt-1">{selectedCluster.areaName}</h3>
                 <p className="text-xs text-muted-foreground">{selectedCluster.country}</p>
               </div>
-              <button onClick={() => setSelectedCluster(null)} className="p-1 rounded-lg hover:bg-accent">
+              <button onClick={() => setSelectedCluster(null)} className="p-1 rounded-lg hover:bg-accent transition-all active:animate-clay-bounce">
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="flex gap-3">
-              <div className="flex-1 rounded-lg bg-secondary p-3 text-center">
+              <div className="flex-1 clay-inset p-3 text-center">
                 <span className="text-2xl">{selectedCluster.disasterType === 'flood' ? '🌊' : selectedCluster.disasterType === 'typhoon' ? '🌀' : '⛰️'}</span>
                 <p className="text-sm font-medium text-foreground capitalize">{selectedCluster.disasterType}</p>
                 <p className="text-[10px] text-muted-foreground">Disaster Type</p>
               </div>
             </div>
 
-            <div className="rounded-lg bg-secondary h-32 flex items-center justify-center border border-border">
+            <div className="clay-inset h-32 flex items-center justify-center">
               <p className="text-xs text-muted-foreground">📸 Drone Snapshot — {selectedCluster.areaName}</p>
             </div>
 
@@ -292,13 +296,13 @@ const MapPage = () => {
               📍 {selectedCluster.position[0].toFixed(4)}, {selectedCluster.position[1].toFixed(4)}
             </p>
 
-            <div className="flex items-center justify-between rounded-lg bg-secondary p-3">
+            <div className="flex items-center justify-between clay-sm p-3">
               <div>
                 <p className="text-xs text-muted-foreground">{selectedCluster.sarContact.team}</p>
                 <p className="text-sm font-medium text-foreground">{selectedCluster.sarContact.name}</p>
               </div>
               <a href={`tel:${selectedCluster.sarContact.phone}`}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground clay-primary transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce">
                 <Phone className="h-4 w-4" />
               </a>
             </div>
