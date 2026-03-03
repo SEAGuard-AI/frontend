@@ -136,8 +136,10 @@ const AppLayout = () => {
           </div>
         )}
 
-        <main className="flex-1 overflow-hidden">
-          <Outlet />
+        <main className="flex-1 overflow-hidden p-3 pt-3 lg:pt-3">
+          <div className="h-full rounded-2xl overflow-hidden shadow-clay">
+            <Outlet />
+          </div>
         </main>
 
         {/* Mobile Bottom Tab Bar */}
