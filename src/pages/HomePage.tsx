@@ -51,7 +51,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-background pb-6">
+    <div className="h-full overflow-y-auto pb-6">
       <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="px-4 pt-6 pb-3">
