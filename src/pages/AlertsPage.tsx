@@ -35,8 +35,8 @@ const AlertsPage = () => {
               key={alert.id}
               onClick={() => { markRead(alert.id); }}
               className={cn(
-                'w-full rounded-xl border p-4 text-left transition-colors',
-                alert.read ? 'bg-card border-border' : 'bg-card border-l-4',
+                'w-full rounded-2xl p-4 text-left transition-all',
+                alert.read ? 'bg-card shadow-clay-sm' : 'bg-card shadow-clay border-l-4',
               )}
               style={!alert.read ? { borderLeftColor: config.color } : undefined}
             >

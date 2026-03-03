@@ -23,17 +23,17 @@ const LoginPage = () => {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
-            <Shield className="h-8 w-8 text-primary" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-clay">
+            <Shield className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">ADRRS</h1>
           <p className="text-sm text-muted-foreground">ASEAN Disaster Response & Recovery System</p>
         </div>
 
         {/* Alert Banner */}
-        <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 p-3">
+        <div className="flex items-center gap-2 rounded-2xl bg-primary/10 shadow-clay-sm p-3">
           <AlertTriangle className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-xs text-primary">3 active disasters in your region</p>
+          <p className="text-xs text-primary font-medium">3 active disasters in your region</p>
         </div>
 
         {/* Form */}
@@ -46,7 +46,7 @@ const LoginPage = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                className="pl-10 h-12 bg-card shadow-clay-inset border-none rounded-xl text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
@@ -57,13 +57,13 @@ const LoginPage = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-12 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                className="pl-10 h-12 bg-card shadow-clay-inset border-none rounded-xl text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
+          <Button type="submit" className="w-full h-12 text-base font-bold rounded-xl" disabled={loading}>
             {loading ? 'Signing in...' : isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
         </form>
@@ -79,7 +79,7 @@ const LoginPage = () => {
         <Button
           variant="outline"
           onClick={guestLogin}
-          className="w-full h-12 border-border text-foreground hover:bg-accent"
+          className="w-full h-12 rounded-xl text-foreground"
         >
           <User className="mr-2 h-4 w-4" />
           Continue as Guest

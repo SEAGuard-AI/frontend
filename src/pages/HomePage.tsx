@@ -72,7 +72,7 @@ const HomePage = () => {
           </div>
           <button
             onClick={() => openNews(localNews[0])}
-            className="w-full rounded-2xl overflow-hidden bg-card border border-border text-left"
+            className="w-full rounded-2xl overflow-hidden bg-card shadow-clay text-left transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
           >
             <div className="relative h-44 w-full">
               <img src={getNewsImage(localNews[0])} alt={localNews[0].title} className="h-full w-full object-cover" />
@@ -89,7 +89,7 @@ const HomePage = () => {
           {localNews.length > 1 && (
             <div className="space-y-2 mt-2">
               {localNews.slice(1).map(news => (
-                <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card border border-border p-2 text-left">
+                <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card shadow-clay-sm p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-clay">
                   <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0 py-0.5">
                     <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
@@ -114,8 +114,8 @@ const HomePage = () => {
             <button
               key={s.country}
               onClick={() => navigate(`/country/${encodeURIComponent(s.country)}`)}
-              className="shrink-0 w-36 snap-start rounded-2xl p-3 border border-border relative overflow-hidden text-left"
-              style={{ background: `linear-gradient(135deg, ${zoneColors[s.alertLevel]}15, ${zoneColors[s.alertLevel]}05)` }}
+              className="shrink-0 w-36 snap-start rounded-2xl p-3 relative overflow-hidden text-left shadow-clay-sm transition-all hover:-translate-y-0.5 hover:shadow-clay"
+              style={{ background: `linear-gradient(135deg, ${zoneColors[s.alertLevel]}15, hsl(var(--card)))` }}
             >
               <div className="absolute top-0 right-0 h-12 w-12 rounded-bl-full opacity-20"
                 style={{ background: zoneColors[s.alertLevel] }} />
@@ -144,7 +144,7 @@ const HomePage = () => {
             <button
               key={status.country}
               onClick={() => navigate(`/country/${encodeURIComponent(status.country)}`)}
-              className="rounded-xl bg-card border border-border p-3 text-left hover:border-primary/30 transition-colors"
+              className="rounded-2xl bg-card shadow-clay-sm p-3 text-left hover:-translate-y-0.5 hover:shadow-clay transition-all"
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{countryFlags[status.country]}</span>
@@ -178,8 +178,8 @@ const HomePage = () => {
         </div>
         <div className="space-y-2 px-4">
           {globalNews.map(news => (
-            <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card border border-border p-2 text-left">
-              <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-lg object-cover shrink-0" />
+            <button key={news.id} onClick={() => openNews(news)} className="w-full flex gap-3 rounded-xl bg-card shadow-clay-sm p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-clay">
+              <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-xl object-cover shrink-0" />
               <div className="flex-1 min-w-0 py-0.5">
                 <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
                 <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{news.summary}</p>
@@ -202,7 +202,7 @@ const HomePage = () => {
             <button
               key={tip.id}
               onClick={() => navigate(`/guide/${tip.id}`)}
-              className="w-full flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left hover:border-primary/30 transition-colors"
+              className="w-full flex items-center gap-3 rounded-xl bg-card shadow-clay-sm p-3 text-left hover:-translate-y-0.5 hover:shadow-clay transition-all"
             >
               <span className="text-2xl">{tip.icon}</span>
               <div className="flex-1">
