@@ -137,7 +137,7 @@ const ProfilePage = () => {
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-6 space-y-4">
         {/* User Info */}
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary border border-border">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary shadow-clay-sm">
             <User className="h-7 w-7 text-muted-foreground" />
           </div>
           <div className="flex-1">
@@ -173,13 +173,13 @@ const ProfilePage = () => {
 
         {/* Location Edit */}
         {editingLocation && (
-          <div className="rounded-xl bg-card border border-border p-3 space-y-2">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3 space-y-2">
             <input
               type="text"
               placeholder={t('search_location')}
               value={locationSearch}
               onChange={e => { setLocationSearch(e.target.value); searchLocation(e.target.value); }}
-              className="w-full rounded-lg bg-secondary border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-xl bg-muted shadow-clay-inset px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {searchResults.map((r, i) => (
               <button key={i} onClick={() => {
@@ -195,7 +195,7 @@ const ProfilePage = () => {
         )}
 
         {/* Mini Map */}
-        <div className="rounded-xl overflow-hidden border border-border">
+        <div className="rounded-2xl overflow-hidden shadow-clay">
           <div ref={mapRef} className="h-44 w-full" />
         </div>
 
@@ -237,17 +237,17 @@ const ProfilePage = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="rounded-xl bg-card border border-border p-3 text-center">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3 text-center">
             <Bell className="h-5 w-5 mx-auto text-primary mb-1" />
             <p className="text-lg font-bold text-foreground">{unreadAlerts}</p>
             <p className="text-[10px] text-muted-foreground">{t('unread_alerts')}</p>
           </div>
-          <div className="rounded-xl bg-card border border-border p-3 text-center">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3 text-center">
             <MapPin className="h-5 w-5 mx-auto text-zone-caution mb-1" />
             <p className="text-lg font-bold text-foreground">{disasterZones.filter(z => z.level !== 'evacuation').length}</p>
             <p className="text-[10px] text-muted-foreground">{t('active_zones')}</p>
           </div>
-          <div className="rounded-xl bg-card border border-border p-3 text-center">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3 text-center">
             <Shield className="h-5 w-5 mx-auto text-zone-evacuation mb-1" />
             <p className="text-lg font-bold text-foreground">{disasterZones.filter(z => z.level === 'evacuation').length}</p>
             <p className="text-[10px] text-muted-foreground">{t('shelters')}</p>
@@ -262,7 +262,7 @@ const ProfilePage = () => {
               <a
                 key={c.id}
                 href={`tel:${c.phone}`}
-                className="flex items-center gap-3 rounded-xl bg-card border border-border p-3"
+                className="flex items-center gap-3 rounded-2xl bg-card shadow-clay-sm p-3 transition-all hover:-translate-y-0.5 hover:shadow-clay"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                   <Phone className="h-4 w-4 text-primary" />
@@ -281,7 +281,7 @@ const ProfilePage = () => {
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('settings')}</p>
 
           {/* Theme Toggle */}
-          <div className="rounded-xl bg-card border border-border p-3">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {preferences.theme === 'dark' ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
@@ -303,7 +303,7 @@ const ProfilePage = () => {
           </div>
 
           {/* Language Selector */}
-          <div className="rounded-xl bg-card border border-border p-3 space-y-2">
+          <div className="rounded-2xl bg-card shadow-clay-sm p-3 space-y-2">
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">{t('language')}</span>
@@ -313,10 +313,10 @@ const ProfilePage = () => {
                 <button
                   key={lang.country}
                   onClick={() => setLanguage(lang.name)}
-                  className={`text-left rounded-lg px-3 py-2 text-xs transition-colors ${
+                  className={`text-left rounded-xl px-3 py-2 text-xs transition-all ${
                     currentLangName === lang.name
-                      ? 'bg-primary/10 text-primary border border-primary/30'
-                      : 'bg-secondary text-foreground hover:bg-accent border border-transparent'
+                      ? 'bg-primary/10 text-primary shadow-clay-sm font-bold'
+                      : 'bg-muted text-foreground hover:shadow-clay-sm font-medium'
                   }`}
                 >
                   <span className="font-medium">{lang.nativeName}</span>
@@ -328,7 +328,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Logout */}
-        <Button variant="outline" className="w-full gap-2 border-border" onClick={logout}>
+        <Button variant="outline" className="w-full gap-2 rounded-2xl" onClick={logout}>
           <LogOut className="h-4 w-4" />
           {t('sign_out')}
         </Button>

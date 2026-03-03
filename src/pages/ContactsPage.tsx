@@ -41,7 +41,7 @@ const ContactsPage = () => {
       {/* SOS Button */}
       <div className="px-4 mb-4">
         <Button
-          className="w-full h-14 text-lg font-bold rounded-xl animate-pulse-emergency gap-2"
+          className="w-full h-14 text-lg font-bold rounded-2xl animate-pulse-emergency gap-2 shadow-clay"
           onClick={() => window.open('tel:112')}
         >
           <AlertTriangle className="h-5 w-5" />
@@ -58,7 +58,7 @@ const ContactsPage = () => {
             placeholder="Search contacts..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full rounded-lg bg-secondary border border-border px-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-xl bg-card shadow-clay-inset px-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
@@ -68,8 +68,8 @@ const ContactsPage = () => {
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors border',
-            activeCategory === 'all' ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-secondary border-border text-muted-foreground'
+            'shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all',
+            activeCategory === 'all' ? 'bg-primary/15 text-primary shadow-clay-sm' : 'bg-card shadow-clay-sm text-muted-foreground hover:shadow-clay'
           )}
         >
           All
@@ -81,9 +81,9 @@ const ContactsPage = () => {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors border flex items-center gap-1',
-                activeCategory === cat ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-secondary border-border text-muted-foreground'
-              )}
+              'shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1',
+              activeCategory === cat ? 'bg-primary/15 text-primary shadow-clay-sm' : 'bg-card shadow-clay-sm text-muted-foreground hover:shadow-clay'
+            )}
             >
               <Icon className="h-3 w-3" />
               {categoryLabels[cat]}
@@ -97,8 +97,8 @@ const ContactsPage = () => {
         {filtered.map(contact => {
           const Icon = categoryIcons[contact.category];
           return (
-            <div key={contact.id} className="flex items-center gap-3 rounded-xl bg-card border border-border p-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
+            <div key={contact.id} className="flex items-center gap-3 rounded-2xl bg-card shadow-clay-sm p-3 transition-all hover:-translate-y-0.5 hover:shadow-clay">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary shadow-clay-inset">
                 <Icon className="h-5 w-5 text-foreground" />
               </div>
               <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ const ContactsPage = () => {
               </div>
               <a
                 href={`tel:${contact.phone}`}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0 shadow-clay-sm transition-all hover:shadow-clay hover:-translate-y-0.5 active:shadow-clay-pressed"
               >
                 <Phone className="h-4 w-4" />
               </a>
