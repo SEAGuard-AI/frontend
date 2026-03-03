@@ -32,6 +32,7 @@ const ContactsPage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
+      <div className="max-w-5xl mx-auto">
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-xl font-bold text-foreground">Emergency Contacts</h1>
         <p className="text-sm text-muted-foreground mt-1">One-tap emergency call</p>
@@ -92,7 +93,7 @@ const ContactsPage = () => {
       </div>
 
       {/* Contact List */}
-      <div className="px-4 space-y-2 pb-6">
+      <div className="px-4 pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {filtered.map(contact => {
           const Icon = categoryIcons[contact.category];
           return (
@@ -121,6 +122,7 @@ const ContactsPage = () => {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

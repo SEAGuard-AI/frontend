@@ -20,6 +20,7 @@ const AlertsPage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
+      <div className="max-w-4xl mx-auto">
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-xl font-bold text-foreground">Alerts</h1>
         <p className="text-sm text-muted-foreground mt-1">Early warning notifications</p>
@@ -82,6 +83,7 @@ const AlertsPage = () => {
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );
