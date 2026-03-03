@@ -48,6 +48,9 @@
     --clay-shadow: 8px 8px 16px hsl(20 10% 84% / 0.7), -4px -4px 12px hsl(0 0% 100% / 0.8);
     --clay-shadow-sm: 4px 4px 10px hsl(20 10% 84% / 0.5), -2px -2px 8px hsl(0 0% 100% / 0.7);
     --clay-shadow-lg: 12px 12px 24px hsl(20 10% 80% / 0.6), -6px -6px 16px hsl(0 0% 100% / 0.9);
+    --clay-inner: inset -3px -3px 6px hsl(20 10% 82% / 0.6), inset 3px 3px 6px hsl(0 0% 100% / 0.8);
+    --clay-inner-sm: inset -2px -2px 4px hsl(20 10% 84% / 0.5), inset 2px 2px 4px hsl(0 0% 100% / 0.7);
+    --clay-inner-lg: inset -4px -4px 8px hsl(20 10% 80% / 0.6), inset 4px 4px 8px hsl(0 0% 100% / 0.9);
     --clay-inset: inset 2px 2px 4px hsl(20 10% 84% / 0.4), inset -1px -1px 3px hsl(0 0% 100% / 0.7);
     --clay-shadow-pressed: inset 4px 4px 8px hsl(20 10% 82% / 0.6), inset -2px -2px 6px hsl(0 0% 100% / 0.5);
 
@@ -95,6 +98,9 @@
     --clay-shadow: 6px 6px 14px hsl(0 0% 4% / 0.6), -3px -3px 10px hsl(0 0% 20% / 0.3);
     --clay-shadow-sm: 3px 3px 8px hsl(0 0% 4% / 0.5), -2px -2px 6px hsl(0 0% 20% / 0.2);
     --clay-shadow-lg: 10px 10px 20px hsl(0 0% 3% / 0.7), -5px -5px 14px hsl(0 0% 22% / 0.3);
+    --clay-inner: inset -3px -3px 6px hsl(0 0% 4% / 0.5), inset 3px 3px 6px hsl(0 0% 22% / 0.4);
+    --clay-inner-sm: inset -2px -2px 4px hsl(0 0% 5% / 0.4), inset 2px 2px 4px hsl(0 0% 20% / 0.3);
+    --clay-inner-lg: inset -4px -4px 8px hsl(0 0% 3% / 0.6), inset 4px 4px 8px hsl(0 0% 24% / 0.4);
     --clay-inset: inset 2px 2px 4px hsl(0 0% 6% / 0.5), inset -1px -1px 3px hsl(0 0% 22% / 0.3);
     --clay-shadow-pressed: inset 4px 4px 8px hsl(0 0% 5% / 0.6), inset -2px -2px 6px hsl(0 0% 20% / 0.3);
 
@@ -124,21 +130,21 @@
 @layer components {
   /* Claymorphism utility classes */
   .clay {
-    box-shadow: var(--clay-shadow);
+    box-shadow: var(--clay-shadow), var(--clay-inner);
     border: 1px solid hsl(var(--border) / 0.5);
     background: hsl(var(--card));
     border-radius: var(--radius);
   }
 
   .clay-sm {
-    box-shadow: var(--clay-shadow-sm);
+    box-shadow: var(--clay-shadow-sm), var(--clay-inner-sm);
     border: 1px solid hsl(var(--border) / 0.4);
     background: hsl(var(--card));
     border-radius: var(--radius);
   }
 
   .clay-lg {
-    box-shadow: var(--clay-shadow-lg);
+    box-shadow: var(--clay-shadow-lg), var(--clay-inner-lg);
     border: 1px solid hsl(var(--border) / 0.5);
     background: hsl(var(--card));
     border-radius: calc(var(--radius) + 4px);
@@ -158,13 +164,13 @@
   }
 
   .clay-btn {
-    box-shadow: var(--clay-shadow-sm);
+    box-shadow: var(--clay-shadow-sm), var(--clay-inner-sm);
     border-radius: var(--radius);
     transition: box-shadow 0.2s ease, transform 0.15s ease;
   }
   .clay-btn:hover {
     transform: translateY(-1px);
-    box-shadow: var(--clay-shadow);
+    box-shadow: var(--clay-shadow), var(--clay-inner);
   }
   .clay-btn:active {
     transform: translateY(0);
@@ -172,13 +178,13 @@
   }
 
   .clay-primary {
-    box-shadow: 6px 6px 14px hsl(0 72% 40% / 0.3), -3px -3px 10px hsl(0 72% 65% / 0.2);
+    box-shadow: 6px 6px 14px hsl(0 72% 40% / 0.3), -3px -3px 10px hsl(0 72% 65% / 0.2), var(--clay-inner-sm);
     border: none;
     border-radius: var(--radius);
   }
 
   .clay-icon {
-    box-shadow: var(--clay-shadow-sm);
+    box-shadow: var(--clay-shadow-sm), var(--clay-inner-sm);
     border: 1px solid hsl(var(--border) / 0.3);
     border-radius: 1rem;
   }
