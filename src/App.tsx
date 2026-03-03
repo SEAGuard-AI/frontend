@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserPreferencesProvider, usePreferences } from "@/contexts/UserPreferencesContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import AppLayout from "@/components/AppLayout";
-import OnboardingPage from "@/pages/OnboardingPage";
 import LoginPage from "@/pages/LoginPage";
 import UserSetupPage from "@/pages/UserSetupPage";
 import HomePage from "@/pages/HomePage";
@@ -26,7 +25,7 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/onboarding" replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const SetupGuard = ({ children }: { children: React.ReactNode }) => {
@@ -43,14 +42,13 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const SetupRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
   const { preferences } = usePreferences();
-  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (preferences.setupComplete) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/onboarding" element={<AuthRoute><OnboardingPage /></AuthRoute>} />
     <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
     <Route path="/setup" element={<SetupRoute><UserSetupPage /></SetupRoute>} />
     <Route element={<ProtectedRoute><SetupGuard><AppLayout /></SetupGuard></ProtectedRoute>}>

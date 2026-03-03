@@ -52,6 +52,7 @@ const HomePage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-background pb-6">
+      <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="px-4 pt-6 pb-3">
         <div className="flex items-center gap-2">
@@ -138,7 +139,7 @@ const HomePage = () => {
           <TrendingUp className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">{t('asean_status')}</h2>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {sortedStatuses.map(status => (
             <button
               key={status.country}
@@ -213,6 +214,7 @@ const HomePage = () => {
           ))}
         </div>
       </section>
+      </div>
     </div>
   );
 };

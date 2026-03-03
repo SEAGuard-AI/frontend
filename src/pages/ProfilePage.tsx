@@ -134,7 +134,7 @@ const ProfilePage = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
-      <div className="px-4 pt-6 pb-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 pt-6 pb-6 space-y-4">
         {/* User Info */}
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary border border-border">
@@ -236,7 +236,7 @@ const ProfilePage = () => {
         )}
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="rounded-xl bg-card border border-border p-3 text-center">
             <Bell className="h-5 w-5 mx-auto text-primary mb-1" />
             <p className="text-lg font-bold text-foreground">{unreadAlerts}</p>
