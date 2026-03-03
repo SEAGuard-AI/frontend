@@ -139,13 +139,13 @@ const MapPage = () => {
           <div className="relative">
             <button
               onClick={() => setShowCountryPicker(!showCountryPicker)}
-              className="flex items-center gap-1.5 clay-sm backdrop-blur-sm px-2.5 py-2 text-sm font-medium text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
+              className="flex items-center gap-1.5 clay-sm backdrop-blur-md bg-card/70 px-2.5 py-2 text-sm font-medium text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
             >
               <MapPin className="h-4 w-4 text-primary" />
               <ChevronDown className="h-3 w-3" />
             </button>
             {showCountryPicker && (
-              <div className="absolute top-full mt-1 w-48 clay overflow-hidden max-h-60 overflow-y-auto animate-scale-in">
+              <div className="absolute top-full mt-1 w-48 clay backdrop-blur-md bg-card/80 overflow-hidden max-h-60 overflow-y-auto animate-scale-in">
                 {aseanCountries.map(c => (
                   <button
                     key={c}
@@ -171,7 +171,7 @@ const MapPage = () => {
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
               onFocus={() => setShowSearch(true)}
-              className="w-full rounded-[var(--radius)] bg-card/95 backdrop-blur-sm shadow-clay-sm px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-border/50"
+              className="w-full rounded-[var(--radius)] bg-card/70 backdrop-blur-md shadow-clay-sm px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-white/20"
               style={{ boxShadow: 'var(--clay-shadow-sm), var(--clay-inner-sm)' }}
             />
           </div>
@@ -179,14 +179,14 @@ const MapPage = () => {
           {/* Filter & Heatmap toggles */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="clay-sm backdrop-blur-sm p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
+            className="clay-sm backdrop-blur-md bg-card/70 p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
           >
             <Filter className="h-4 w-4" />
           </button>
           <button
             onClick={() => setShowHeatmap(!showHeatmap)}
             className={cn(
-              'backdrop-blur-sm p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
+              'backdrop-blur-md bg-card/70 p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
               showHeatmap ? 'clay-primary text-primary' : 'clay-sm text-foreground hover:shadow-clay'
             )}
           >
@@ -196,7 +196,7 @@ const MapPage = () => {
 
         {/* Search Results Dropdown */}
         {showSearch && searchQuery.length >= 2 && (
-          <div className="clay overflow-hidden animate-scale-in">
+          <div className="clay backdrop-blur-md bg-card/80 overflow-hidden animate-scale-in">
             {isSearching ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">Searching...</div>
             ) : searchResults.length > 0 ? (
@@ -219,7 +219,7 @@ const MapPage = () => {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="absolute top-16 right-4 z-[1000] clay p-3 space-y-2 w-44 animate-scale-in">
+        <div className="absolute top-16 right-4 z-[1000] clay backdrop-blur-md bg-card/80 p-3 space-y-2 w-44 animate-scale-in">
           <p className="text-xs font-medium text-muted-foreground">Disaster Type</p>
           {(['all', 'flood', 'landslide', 'typhoon', 'earthquake'] as const).map(t => (
             <button
@@ -237,7 +237,7 @@ const MapPage = () => {
       )}
 
       {/* Zone Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-sm p-3">
+      <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-md bg-card/70 p-3">
         <p className="text-[10px] font-medium text-muted-foreground mb-1.5">ZONE STATUS</p>
         <div className="space-y-1">
           {(Object.entries(zoneLabels) as [ZoneLevel, string][]).map(([level, label]) => (
@@ -263,7 +263,7 @@ const MapPage = () => {
       {/* Bottom Sheet for selected cluster */}
       {selectedCluster && (
         <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
-          <div className="clay-lg rounded-b-none p-4 space-y-3">
+          <div className="clay-lg backdrop-blur-md bg-card/85 rounded-b-none p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
