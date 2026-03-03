@@ -129,7 +129,8 @@ const MapPage = () => {
   };
 
   return (
-    <div className="relative h-full w-full">
+    <div className="h-full w-full p-3">
+    <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
       <div ref={mapRef} className="h-full w-full" />
 
       {/* Search Bar */}
@@ -309,6 +310,7 @@ const MapPage = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };
