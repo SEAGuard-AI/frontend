@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserLocation {
   lat: number;
@@ -26,13 +27,57 @@ interface UserPreferencesContextType {
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
 
 export const UserPreferencesProvider = ({ children }: { children: ReactNode }) => {
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    country: '',
-    language: '',
-    setupComplete: false,
-    location: null,
-    theme: 'dark',
+  const { user } = useAuth();
+  const storageKey = user ? `adrrs_preferences_${user.id}` : 'adrrs_preferences_guest';
+
+  const [currentKey, setCurrentKey] = useState(storageKey);
+  const [preferences, setPreferences] = useState<UserPreferences>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {
+      country: '',
+      language: '',
+      setupComplete: false,
+      location: null,
+      theme: 'dark',
+    };
   });
+
+  // Synchronously load from local storage when the user (storageKey) changes
+  if (storageKey !== currentKey) {
+    setCurrentKey(storageKey);
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setPreferences(JSON.parse(saved));
+      } else {
+        setPreferences({
+          country: '',
+          language: '',
+          setupComplete: false,
+          location: null,
+          theme: 'dark',
+        });
+      }
+    } catch {
+      setPreferences({
+        country: '',
+        language: '',
+        setupComplete: false,
+        location: null,
+        theme: 'dark',
+      });
+    }
+  }
+
+  // Save to local storage whenever preferences change
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(preferences));
+  }, [preferences, storageKey]);
 
   // Sync .dark class on <html>
   useEffect(() => {

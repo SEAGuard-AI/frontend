@@ -1,21 +1,38 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, AlertTriangle, User, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const LoginPage = () => {
-  const { login, guestLogin } = useAuth();
+  const navigate = useNavigate();
+  const { login, register, guestLogin } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await login(email, password);
-    setLoading(false);
+    setError(null);
+    try {
+      if (isSignUp) {
+        await register(name, email, password);
+        // Explicitly go to setup after registering a brand new account
+        navigate('/setup');
+      } else {
+        await login(email, password);
+        // Let the Guard/Routes handle login logic naturally, but give it a push
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,15 +47,30 @@ const LoginPage = () => {
           <p className="text-sm text-muted-foreground">ASEAN Disaster Response & Recovery System</p>
         </div>
 
-        {/* Alert Banner */}
-        <div className="flex items-center gap-2 rounded-2xl bg-primary/10 shadow-clay-sm p-3">
-          <AlertTriangle className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-xs text-primary font-medium">3 active disasters in your region</p>
-        </div>
+        {/* Error Banner */}
+        {error && (
+          <div className="flex items-center gap-2 rounded-2xl bg-destructive/10 border border-destructive/20 shadow-clay-sm p-3">
+            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-xs text-destructive font-medium">{error}</p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
+            {isSignUp && (
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10 h-12 bg-card shadow-clay-inset border-none rounded-xl text-foreground placeholder:text-muted-foreground"
+                  required={isSignUp}
+                />
+              </div>
+            )}
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -63,8 +95,8 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base font-bold rounded-xl" disabled={loading}>
-            {loading ? 'Signing in...' : isSignUp ? 'Create Account' : 'Sign In'}
+          <Button type="submit" className="w-full h-12 text-base font-bold rounded-xl shadow-clay" disabled={loading}>
+            {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
         </form>
 
@@ -79,7 +111,7 @@ const LoginPage = () => {
         <Button
           variant="outline"
           onClick={guestLogin}
-          className="w-full h-12 rounded-xl text-foreground"
+          className="w-full h-12 rounded-xl text-foreground shadow-clay-sm"
         >
           <User className="mr-2 h-4 w-4" />
           Continue as Guest
@@ -88,8 +120,11 @@ const LoginPage = () => {
         <p className="text-center text-xs text-muted-foreground">
           <button
             type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:underline"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError(null);
+            }}
+            className="text-primary hover:underline font-semibold"
           >
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
           </button>

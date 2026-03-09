@@ -39,8 +39,12 @@ const SetupGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-	const { isAuthenticated } = useAuth();
-	return isAuthenticated ? <Navigate to="/setup" replace /> : <>{children}</>;
+	const { isAuthenticated, user } = useAuth();
+	const { preferences } = usePreferences();
+	if (isAuthenticated && !user?.isGuest) {
+		return preferences.setupComplete ? <Navigate to="/dashboard" replace /> : <Navigate to="/setup" replace />;
+	}
+	return <>{children}</>;
 };
 
 const SetupRoute = ({ children }: { children: React.ReactNode }) => {
