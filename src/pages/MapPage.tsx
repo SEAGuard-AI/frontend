@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   disasterZones, populationClusters, aseanCountries,
   countryDefaultCenters, type PopulationCluster, type ZoneLevel, type DisasterType
 } from '@/data/mockData';
-import { X, Layers, Filter, ChevronDown, Navigation, Phone, Users, MapPin, Search } from 'lucide-react';
+import { X, Layers, Filter, ChevronDown, Navigation, Phone, MapPin, Search, Droplets, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { usePreferences } from '@/contexts/UserPreferencesContext';
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3000';
 
 const zoneColors: Record<ZoneLevel, string> = {
   evacuation: '#22c55e',
@@ -22,6 +24,26 @@ const zoneLabels: Record<ZoneLevel, string> = {
   caution: 'Caution',
   danger: 'Danger',
 };
+
+interface FloodPrediction {
+  flood_occurred: number;
+  risk_level: string;
+  confidence: number | null;
+  nearest_area: string;
+  lat: number;
+  lng: number;
+  nearby_points: { lat: number; lng: number; label: string }[];
+  sensor_data: Record<string, number | string>;
+}
+
+interface PredictionPin {
+  id: string;
+  lat: number;
+  lng: number;
+  result: FloodPrediction | null;   // null = loading
+  circle: L.Circle | null;
+  loadingMarker: L.Marker | null;
+}
 
 const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -39,6 +61,151 @@ const MapPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // ── Flood Detect Mode ────────────────────────────────────────────────────
+  const [floodDetectMode, setFloodDetectMode] = useState(false);
+  const [selectedPrediction, setSelectedPrediction] = useState<FloodPrediction | null>(null);
+  const pinsRef = useRef<PredictionPin[]>([]);
+  const clickHandlerRef = useRef<((e: L.LeafletMouseEvent) => void) | null>(null);
+
+  // Loading marker HTML
+  const makeLoadingIcon = () => L.divIcon({
+    className: '',
+    html: `<div style="
+      width:32px;height:32px;border-radius:50%;
+      background:rgba(100,100,100,0.6);
+      border:2px solid rgba(255,255,255,0.6);
+      display:flex;align-items:center;justify-content:center;
+      animation:spin 1s linear infinite;
+      box-shadow:0 2px 8px rgba(0,0,0,0.4);
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+
+  // Handle map click for flood predict
+  const handleFloodClick = useCallback(async (e: L.LeafletMouseEvent) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const { lat, lng } = e.latlng;
+    const pinId = `${Date.now()}`;
+
+    // Place loading marker
+    const loadingMarker = L.marker([lat, lng], { icon: makeLoadingIcon() }).addTo(map);
+
+    const pin: PredictionPin = { id: pinId, lat, lng, result: null, circle: null, loadingMarker };
+    pinsRef.current.push(pin);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/flood/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error((errBody as any).error ?? `Server error ${res.status}`);
+      }
+
+      const data: FloodPrediction = await res.json();
+
+      // Remove loading marker
+      loadingMarker.remove();
+
+      const isFlood = data.flood_occurred === 1;
+      const circleColor = isFlood ? '#eab308' : '#22c55e'; // yellow = flood, green = safe
+
+      const circle = L.circle([lat, lng], {
+        radius: 700,
+        fillColor: circleColor,
+        fillOpacity: 0.35,
+        color: circleColor,
+        weight: 2.5,
+        opacity: 0.85,
+      }).addTo(map);
+
+      // Pulse animation via repeated setStyle
+      let opacity = 0.35;
+      let dir = -1;
+      const pulseInterval = setInterval(() => {
+        opacity += dir * 0.04;
+        if (opacity <= 0.15) dir = 1;
+        if (opacity >= 0.4)  dir = -1;
+        circle.setStyle({ fillOpacity: opacity });
+      }, 80);
+
+      circle.on('click', () => setSelectedPrediction(data));
+      // Store interval id on circle element for cleanup
+      (circle as any)._pulseInterval = pulseInterval;
+
+      // Update pin
+      pin.result = data;
+      pin.circle = circle;
+      pin.loadingMarker = null;
+
+      // Draw nearby offset centroid markers
+      data.nearby_points?.forEach(pt => {
+        L.circle([pt.lat, pt.lng], {
+          radius: 700,
+          fillColor: circleColor,
+          fillOpacity: 0.35,
+          color: circleColor,
+          weight: 2.5,
+          opacity: 0.85,
+        }).addTo(map)
+          .bindTooltip(`${pt.label}\n${pt.lat.toFixed(4)}, ${pt.lng.toFixed(4)}`, { direction: 'top' });
+      });
+
+      setSelectedPrediction(data);
+
+    } catch (err) {
+      loadingMarker.remove();
+      // Show error circle (grey)
+      L.circle([lat, lng], {
+        radius: 700,
+        fillColor: '#6b7280',
+        fillOpacity: 0.25,
+        color: '#6b7280',
+        weight: 2,
+        opacity: 0.6,
+      }).addTo(map).bindTooltip(
+        `⚠️ ${err instanceof Error ? err.message : 'Prediction failed'}`,
+        { direction: 'top', permanent: true }
+      );
+    }
+  }, []);
+
+  // Register / unregister click handler on mode toggle
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    if (floodDetectMode) {
+      clickHandlerRef.current = handleFloodClick;
+      map.on('click', handleFloodClick);
+      map.getContainer().style.cursor = 'crosshair';
+    } else {
+      if (clickHandlerRef.current) {
+        map.off('click', clickHandlerRef.current);
+        clickHandlerRef.current = null;
+      }
+      map.getContainer().style.cursor = '';
+    }
+
+    return () => {
+      if (clickHandlerRef.current) {
+        map.off('click', clickHandlerRef.current);
+        clickHandlerRef.current = null;
+      }
+      map.getContainer().style.cursor = '';
+    };
+  }, [floodDetectMode, handleFloodClick]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -65,7 +232,13 @@ const MapPage = () => {
   useEffect(() => {
     if (!mapInstance.current) return;
     const map = mapInstance.current;
-    map.eachLayer(l => { if (!(l instanceof L.TileLayer)) map.removeLayer(l); });
+    map.eachLayer(l => {
+      if (!(l instanceof L.TileLayer)) {
+        // Don't remove flood prediction circles/markers
+        if ((l as any)._isFloodPrediction) return;
+        map.removeLayer(l);
+      }
+    });
 
     const filteredZones = disasterZones.filter(z =>
       z.country === selectedCountry && (filterType === 'all' || z.disasterType === filterType)
@@ -130,6 +303,10 @@ const MapPage = () => {
 
   return (
     <div className="h-full w-full p-3">
+
+    {/* CSS for loading spinner */}
+    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
     <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
       <div ref={mapRef} className="h-full w-full" />
 
@@ -177,6 +354,21 @@ const MapPage = () => {
             />
           </div>
 
+          {/* Flood Detect Mode Toggle */}
+          <button
+            onClick={() => { setFloodDetectMode(v => !v); setSelectedPrediction(null); setSelectedCluster(null); }}
+            title="Flood Detect Mode — click any map location to predict flood risk"
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
+              floodDetectMode
+                ? 'clay-primary text-primary rounded-[var(--radius)]'
+                : 'clay-sm bg-card/70 text-foreground hover:shadow-clay rounded-[var(--radius)]'
+            )}
+          >
+            <Droplets className="h-4 w-4" />
+            {floodDetectMode && <span className="text-xs hidden sm:inline">Detect</span>}
+          </button>
+
           {/* Filter & Heatmap toggles */}
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -195,11 +387,21 @@ const MapPage = () => {
           </button>
         </div>
 
+        {/* Flood Detect Mode Banner */}
+        {floodDetectMode && (
+          <div className="flex items-center gap-2 clay-sm backdrop-blur-md bg-primary/10 border border-primary/30 px-3 py-1.5 animate-scale-in">
+            <Droplets className="h-3.5 w-3.5 text-primary shrink-0" />
+            <p className="text-xs text-primary font-medium">Click anywhere on the map to predict flood risk at that location</p>
+          </div>
+        )}
+
         {/* Search Results Dropdown */}
         {showSearch && searchQuery.length >= 2 && (
           <div className="clay backdrop-blur-md bg-card/80 overflow-hidden animate-scale-in">
             {isSearching ? (
-              <div className="px-3 py-4 text-center text-xs text-muted-foreground">Searching...</div>
+              <div className="px-3 py-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" /> Searching...
+              </div>
             ) : searchResults.length > 0 ? (
               searchResults.map((r, i) => (
                 <button
@@ -247,6 +449,21 @@ const MapPage = () => {
               <span className="text-[11px] text-foreground">{label}</span>
             </div>
           ))}
+          {/* Flood Detect legend rows */}
+          {floodDetectMode && (
+            <>
+              <div className="my-1 border-t border-border/30" />
+              <p className="text-[10px] font-medium text-muted-foreground">FLOOD DETECT</p>
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="text-[11px] text-foreground">Safe (No Flood)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                <span className="text-[11px] text-foreground">Flood Risk</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -261,8 +478,88 @@ const MapPage = () => {
         </Button>
       </div>
 
-      {/* Bottom Sheet for selected cluster */}
-      {selectedCluster && (
+      {/* ── Flood Prediction Result Sheet ── */}
+      {selectedPrediction && !selectedCluster && (
+        <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
+          <div className="clay-lg backdrop-blur-md bg-card/90 rounded-b-none p-4 space-y-3">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-3 w-3 rounded-full animate-pulse-emergency"
+                    style={{ background: selectedPrediction.flood_occurred === 1 ? '#eab308' : '#22c55e' }}
+                  />
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: selectedPrediction.flood_occurred === 1 ? '#eab308' : '#22c55e' }}
+                  >
+                    {selectedPrediction.risk_level} RISK
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    — {selectedPrediction.flood_occurred === 1 ? '🌊 Flood Likely' : '✅ No Flood'}
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-foreground mt-1">{selectedPrediction.nearest_area}</h3>
+                <p className="text-xs text-muted-foreground font-mono">
+                  📍 {selectedPrediction.lat.toFixed(5)}, {selectedPrediction.lng.toFixed(5)}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPrediction(null)}
+                className="p-1 rounded-lg hover:bg-accent transition-all active:animate-clay-bounce"
+              >
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="clay-inset p-2.5 text-center">
+                <p className="text-xl font-bold" style={{ color: selectedPrediction.flood_occurred === 1 ? '#eab308' : '#22c55e' }}>
+                  {selectedPrediction.flood_occurred === 1 ? '🌊' : '✅'}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Prediction</p>
+              </div>
+              <div className="clay-inset p-2.5 text-center">
+                <p className="text-base font-bold text-foreground">
+                  {selectedPrediction.confidence !== null
+                    ? `${(selectedPrediction.confidence * 100).toFixed(1)}%`
+                    : '—'}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Confidence</p>
+              </div>
+              <div className="clay-inset p-2.5 text-center">
+                <p className="text-base font-bold text-foreground capitalize">{selectedPrediction.risk_level}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Risk Level</p>
+              </div>
+            </div>
+
+            {/* Sensor data sample */}
+            <div className="clay-inset p-3 space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Sensor Data (Auto-generated)</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {[
+                  ['🌧 Rainfall', `${selectedPrediction.sensor_data.rainfall_mm} mm`],
+                  ['🌡 Temperature', `${selectedPrediction.sensor_data.temperature_c}°C`],
+                  ['💧 Humidity', `${selectedPrediction.sensor_data.humidity_pct}%`],
+                  ['🏞 Water Level', `${selectedPrediction.sensor_data.water_level_m} m`],
+                  ['⛰ Elevation', `${selectedPrediction.sensor_data.elevation_m} m`],
+                  ['🌱 Land Cover', `${selectedPrediction.sensor_data.land_cover}`],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between text-[11px]">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="text-foreground font-medium">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cluster Bottom Sheet ── */}
+      {selectedCluster && !selectedPrediction && (
         <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
           <div className="clay-lg backdrop-blur-md bg-card/85 rounded-b-none p-4 space-y-3">
             <div className="flex items-start justify-between">
