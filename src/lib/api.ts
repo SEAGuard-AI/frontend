@@ -1,4 +1,5 @@
-export const API_BASE_URL = 'https://backend-production-0da3.up.railway.app/api';
+const API_ORIGIN = (import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
+export const API_BASE_URL = `${API_ORIGIN}/api`;
 
 export const getToken = () => localStorage.getItem('token');
 export const setToken = (token: string) => localStorage.setItem('token', token);
@@ -75,4 +76,48 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export const authApi = {
   register: (data: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data: any) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+export interface DisasterNewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  date: string;
+  imageUrl: string;
+  country: string;
+  disasterType: string;
+  isGlobal: boolean;
+  videoUrl: string | null;
+  sourceUrl: string | null;
+}
+
+export interface CountryStatusItem {
+  id: string;
+  country: string;
+  activeDisasters: number;
+  affectedPopulation: number;
+  alertLevel: string;
+  recentEvents: string[];
+  prediction: string;
+}
+
+export interface SurvivalTipItem {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  disasterType: string;
+  steps: string[];
+}
+
+export const dashboardApi = {
+  getLocalNews: (country: string) =>
+    apiFetch(`/news?country=${encodeURIComponent(country)}`) as Promise<DisasterNewsItem[]>,
+  getGlobalNews: () =>
+    apiFetch('/news?global=true') as Promise<DisasterNewsItem[]>,
+  getCountryStatuses: () =>
+    apiFetch('/countries') as Promise<CountryStatusItem[]>,
+  getSurvivalTips: () =>
+    apiFetch('/guides/survival') as Promise<SurvivalTipItem[]>,
 };
