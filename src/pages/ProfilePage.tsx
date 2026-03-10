@@ -126,7 +126,7 @@ const ProfilePage = () => {
   const shareLocation = () => {
     const text = `📍 ${t('your_location')}: ${locationLabel}\nhttps://www.google.com/maps?q=${center[0]},${center[1]}`;
     if (navigator.share) {
-      navigator.share({ title: 'My Location — ADRRS', text }).catch(() => {});
+      navigator.share({ title: 'My Location — SeaGUARD', text }).catch(() => {});
     } else {
       navigator.clipboard.writeText(text);
     }

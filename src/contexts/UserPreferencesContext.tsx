@@ -28,7 +28,7 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 
 export const UserPreferencesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const storageKey = user ? `adrrs_preferences_${user.id}` : 'adrrs_preferences_guest';
+  const storageKey = user ? `seaguard_preferences_${user.id}` : 'seaguard_preferences_guest';
 
   const [currentKey, setCurrentKey] = useState(storageKey);
   const [preferences, setPreferences] = useState<UserPreferences>(() => {

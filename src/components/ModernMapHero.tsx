@@ -101,11 +101,6 @@ const ModernMapHero = () => {
           <span class="absolute h-16 w-16 rounded-full border border-destructive/50 animate-ping" style="animation-duration: 3s;"></span>
           <span class="absolute h-24 w-24 rounded-full border border-destructive/20 animate-ping" style="animation-duration: 3s; animation-delay: 1.5s;"></span>
           <div class="relative h-3 w-3 rounded-full bg-destructive shadow-[0_0_12px_rgba(239,68,68,1)] border-[1.5px] border-card"></div>
-          
-          <div class="absolute top-1/2 right-full mr-3 -translate-y-1/2 whitespace-nowrap clay-sm bg-card/90 px-3 py-1.5 rounded-lg text-xs font-bold text-destructive flex items-center gap-1.5 backdrop-blur-md animate-fade-in" style="animation-delay: 0.4s;">
-            <div class="h-1.5 w-1.5 rounded-full bg-destructive shadow-[0_0_8px_rgba(239,68,68,1)]"></div>
-            Evacuation Alert
-          </div>
         </div>
       `,
 			iconSize: [32, 32],
@@ -136,11 +131,6 @@ const ModernMapHero = () => {
         <div class="relative flex items-center justify-center">
           <span class="absolute h-16 w-16 rounded-full border border-emerald-500/50 animate-ping" style="animation-duration: 4s;"></span>
           <div class="relative h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,1)] border-[1.5px] border-card"></div>
-          
-          <div class="absolute top-1/2 left-full ml-3 -translate-y-1/2 whitespace-nowrap clay-sm bg-card/90 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-500 flex items-center gap-1.5 backdrop-blur-md animate-fade-in" style="animation-delay: 0.6s;">
-            <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]"></div>
-            Safe Zone
-          </div>
         </div>
       `,
 			iconSize: [32, 32],
@@ -157,6 +147,82 @@ const ModernMapHero = () => {
 			iconAnchor: [4, 4],
 		});
 		L.marker(jktCoords, { icon: incidentIcon }).addTo(map);
+
+		// ASEAN country flag markers (nudged away from pulse points)
+		const pulsePoints: [number, number][] = [
+			manilaCoords,
+			vietnamCoords,
+			klCoords,
+			jktCoords,
+		];
+
+		const aseanFlags: Array<{
+			country: string;
+			flag: string;
+			coords: [number, number];
+		}> = [
+			{ country: "Indonesia", flag: "🇮🇩", coords: [-2.5, 118.0] },
+			{ country: "Malaysia", flag: "🇲🇾", coords: [4.2, 102.0] },
+			{ country: "Singapore", flag: "🇸🇬", coords: [1.29, 103.85] },
+			{ country: "Thailand", flag: "🇹🇭", coords: [15.87, 100.99] },
+			{ country: "Vietnam", flag: "🇻🇳", coords: [16.2, 107.8] },
+			{ country: "Philippines", flag: "🇵🇭", coords: [12.88, 121.77] },
+			{ country: "Myanmar", flag: "🇲🇲", coords: [19.75, 96.08] },
+			{ country: "Cambodia", flag: "🇰🇭", coords: [12.57, 104.99] },
+			{ country: "Laos", flag: "🇱🇦", coords: [19.85, 102.5] },
+			{ country: "Brunei", flag: "🇧🇳", coords: [4.54, 114.73] },
+		];
+
+		const getMinDistanceToPulses = (coords: [number, number]) =>
+			Math.min(
+				...pulsePoints.map((pulse) =>
+					map.distance(L.latLng(coords[0], coords[1]), L.latLng(pulse[0], pulse[1])),
+				),
+			);
+
+		const avoidPulseOverlap = (coords: [number, number]): [number, number] => {
+			const minGapMeters = 450000;
+			const candidates: [number, number][] = [
+				coords,
+				[coords[0] + 1.8, coords[1] + 1.8],
+				[coords[0] + 1.8, coords[1] - 1.8],
+				[coords[0] - 1.8, coords[1] + 1.8],
+				[coords[0] - 1.8, coords[1] - 1.8],
+				[coords[0], coords[1] + 2.6],
+				[coords[0], coords[1] - 2.6],
+				[coords[0] + 2.6, coords[1]],
+				[coords[0] - 2.6, coords[1]],
+			];
+
+			let best = coords;
+			let bestDistance = -1;
+			for (const candidate of candidates) {
+				const minDistance = getMinDistanceToPulses(candidate);
+				if (minDistance >= minGapMeters) return candidate;
+				if (minDistance > bestDistance) {
+					bestDistance = minDistance;
+					best = candidate;
+				}
+			}
+			return best;
+		};
+
+		aseanFlags.forEach(({ country, flag, coords }) => {
+			const adjustedCoords = avoidPulseOverlap(coords);
+			const icon = L.divIcon({
+				className: "asean-flag-icon",
+				html: `<div class="asean-flag-badge" title="${country}">${flag}</div>`,
+				iconSize: [24, 24],
+				iconAnchor: [12, 12],
+			});
+
+			L.marker(adjustedCoords, {
+				icon,
+				interactive: false,
+				keyboard: false,
+				zIndexOffset: -200,
+			}).addTo(map);
+		});
 
 		// --- Curved SVG Animated Connecting Lines (Domestic Routes) ---
 		// We use bezier curve paths to give a smooth local evacuation flow look
@@ -210,6 +276,19 @@ const ModernMapHero = () => {
 				@keyframes leaflet-radar-spin {
 					from { transform: rotate(0deg); }
 					to { transform: rotate(360deg); }
+				}
+				.asean-flag-badge {
+					height: 24px;
+					width: 24px;
+					border-radius: 9999px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 14px;
+					background: rgba(15, 23, 42, 0.72);
+					border: 1px solid rgba(255, 255, 255, 0.24);
+					box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+					backdrop-filter: blur(2px);
 				}
 			`}</style>
 

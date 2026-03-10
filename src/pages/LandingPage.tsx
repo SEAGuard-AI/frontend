@@ -1,40 +1,73 @@
-import { Shield, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ModernMapHero from "@/components/ModernMapHero";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/UserPreferencesContext";
 
 const LandingPage = () => {
+	const { isAuthenticated, user, logout } = useAuth();
+	const { preferences } = usePreferences();
+	const appEntryPath = preferences.setupComplete ? "/dashboard" : "/setup";
+	const appEntryLabel = preferences.setupComplete ? "Open Dashboard" : "Continue Setup";
+
 	return (
 		<div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden">
 			{/* Navigation Bar */}
 			<nav className="fixed top-0 w-full z-50 p-4">
 				<div className="mx-auto max-w-7xl flex items-center justify-between clay px-6 py-4">
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-clay">
-							<Shield className="h-5 w-5 text-primary-foreground" />
-						</div>
+						<img
+							src="/logo-1.png"
+							alt="SeaGUARD logo"
+							className="h-10 w-10 rounded-xl object-cover shadow-clay"
+						/>
 						<span className="text-xl font-bold tracking-tight">
-							ADRRS
+							SeaGUARD
 						</span>
 					</div>
 
-					<div className="flex items-center gap-4">
-						<Link
-							to="/login"
-							className="text-sm font-medium hover:text-primary transition-colors"
-						>
-							Log in
-						</Link>
-						<Button
-							asChild
-							className="clay-btn clay-primary h-10 px-6 rounded-xl font-bold hidden sm:flex"
-						>
-							<Link to="/login">
-								Get Started
-								<ArrowRight className="ml-2 h-4 w-4" />
+					{isAuthenticated ? (
+						<div className="flex items-center gap-3">
+							<span className="hidden sm:block text-sm text-muted-foreground">
+								Signed in as <span className="font-semibold text-foreground">{user?.name || "User"}</span>
+							</span>
+							<Button
+								asChild
+								className="clay-btn clay-primary h-10 px-6 rounded-xl font-bold"
+							>
+								<Link to={appEntryPath}>
+									{appEntryLabel}
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+							<Button
+								variant="outline"
+								onClick={logout}
+								className="h-10 rounded-xl border-transparent bg-card text-foreground hover:bg-accent/60"
+							>
+								Log out
+							</Button>
+						</div>
+					) : (
+						<div className="flex items-center gap-4">
+							<Link
+								to="/login"
+								className="text-sm font-medium hover:text-primary transition-colors"
+							>
+								Log in
 							</Link>
-						</Button>
-					</div>
+							<Button
+								asChild
+								className="clay-btn clay-primary h-10 px-6 rounded-xl font-bold hidden sm:flex"
+							>
+								<Link to="/login">
+									Get Started
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+						</div>
+					)}
 				</div>
 			</nav>
 
@@ -69,18 +102,28 @@ const LandingPage = () => {
 							asChild
 							className="clay-btn clay-primary h-14 px-8 rounded-2xl text-base font-bold w-full sm:w-auto"
 						>
-							<Link to="/login">
-								Access System
+							<Link to={isAuthenticated ? appEntryPath : "/login"}>
+								{isAuthenticated ? appEntryLabel : "Access System"}
 								<ArrowRight className="ml-2 h-5 w-5" />
 							</Link>
 						</Button>
-						<Button
-							asChild
-							variant="outline"
-							className="clay h-14 px-8 rounded-2xl text-base font-bold bg-card w-full sm:w-auto text-foreground border-transparent hover:bg-accent/50 transition-colors"
-						>
-							<Link to="/login">Continue as Guest</Link>
-						</Button>
+						{isAuthenticated ? (
+							<Button
+								variant="outline"
+								onClick={logout}
+								className="clay h-14 px-8 rounded-2xl text-base font-bold bg-card w-full sm:w-auto text-foreground border-transparent hover:bg-accent/50 transition-colors"
+							>
+								Log out
+							</Button>
+						) : (
+							<Button
+								asChild
+								variant="outline"
+								className="clay h-14 px-8 rounded-2xl text-base font-bold bg-card w-full sm:w-auto text-foreground border-transparent hover:bg-accent/50 transition-colors"
+							>
+								<Link to="/login">Continue as Guest</Link>
+							</Button>
+						)}
 					</div>
 
 					<div className="pt-8 flex items-center gap-8 text-sm font-semibold text-muted-foreground">

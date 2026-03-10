@@ -125,7 +125,7 @@ const UserSetupPage = () => {
           disabled={step === 'country' ? !selectedCountry : !selectedLanguage}
           className="w-full h-14 text-base font-semibold rounded-xl gap-2 mt-4 clay-primary transition-all duration-200 hover:-translate-y-1 active:scale-[0.97]"
         >
-          {step === 'language' ? 'Start Using ADRRS' : 'Continue'}
+          {step === 'language' ? 'Start Using SeaGUARD' : 'Continue'}
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>

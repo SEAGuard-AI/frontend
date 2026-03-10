@@ -1,4 +1,4 @@
-// Mock data for ADRRS prototype — realistic ASEAN geography
+// Mock data for SeaGUARD prototype — realistic ASEAN geography
 
 export type ZoneLevel = 'evacuation' | 'caution' | 'danger';
 export type DisasterType = 'flood' | 'landslide' | 'earthquake' | 'typhoon';

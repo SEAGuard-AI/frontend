@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, AlertTriangle, User, Mail, Lock } from 'lucide-react';
+import { AlertTriangle, User, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -40,10 +40,12 @@ const LoginPage = () => {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-clay">
-            <Shield className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">ADRRS</h1>
+          <img
+            src="/logo-1.png"
+            alt="SeaGUARD logo"
+            className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-clay"
+          />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">SeaGUARD</h1>
           <p className="text-sm text-muted-foreground">ASEAN Disaster Response & Recovery System</p>
         </div>
 

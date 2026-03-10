@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Map, Phone, Bell, User, Shield } from 'lucide-react';
+import { Home, Map, Phone, Bell, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { alerts } from '@/data/mockData';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -13,7 +13,7 @@ const AppLayout = () => {
   const hideBar = location.pathname.includes('/ar');
 
   const navItems = [
-    { path: '/', icon: Home, label: t('home') },
+    { path: '/dashboard', icon: Home, label: t('home') },
     { path: '/map', icon: Map, label: t('map') },
     { path: '/contacts', icon: Phone, label: t('contacts') },
     { path: '/profile', icon: User, label: t('profile') },
@@ -26,10 +26,8 @@ const AppLayout = () => {
         <aside className="hidden lg:flex flex-col w-60 bg-card shadow-clay shrink-0 m-3 mr-0 rounded-2xl overflow-hidden">
           {/* Logo */}
           <div className="flex items-center gap-2.5 px-5 h-16 shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-clay-sm">
-              <Shield className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-            <span className="text-base font-extrabold text-foreground tracking-tight">ADRRS</span>
+            <img src="/logo-1.png" alt="SeaGUARD logo" className="h-9 w-9 rounded-xl object-cover shadow-clay-sm" />
+            <span className="text-base font-extrabold text-foreground tracking-tight">SeaGUARD</span>
           </div>
 
           {/* Nav Links */}
@@ -85,10 +83,8 @@ const AppLayout = () => {
         {!hideBar && (
           <div className="flex lg:hidden items-center justify-between px-4 pt-[env(safe-area-inset-top)] py-2 bg-card shadow-clay-sm mx-3 mt-3 rounded-2xl shrink-0">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary shadow-clay-sm">
-                <Shield className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-sm font-extrabold text-foreground">ADRRS</span>
+              <img src="/logo-1.png" alt="SeaGUARD logo" className="h-8 w-8 rounded-xl object-cover shadow-clay-sm" />
+              <span className="text-sm font-extrabold text-foreground">SeaGUARD</span>
             </div>
             <button
               onClick={() => navigate('/alerts')}
