@@ -88,16 +88,12 @@ const MapPage = () => {
   });
 
   // Handle map click for flood predict
-  const handleFloodClick = useCallback(async (e: L.LeafletMouseEvent) => {
+  const runFloodPrediction = useCallback(async (lat: number, lng: number) => {
     const map = mapInstance.current;
     if (!map) return;
 
-    const { lat, lng } = e.latlng;
     const pinId = `${Date.now()}`;
-
-    // Place loading marker
     const loadingMarker = L.marker([lat, lng], { icon: makeLoadingIcon() }).addTo(map);
-
     const pin: PredictionPin = { id: pinId, lat, lng, result: null, circle: null, loadingMarker };
     pinsRef.current.push(pin);
 
@@ -114,12 +110,10 @@ const MapPage = () => {
       }
 
       const data: FloodPrediction = await res.json();
-
-      // Remove loading marker
       loadingMarker.remove();
 
       const isFlood = data.flood_occurred === 1;
-      const circleColor = isFlood ? '#eab308' : '#22c55e'; // yellow = flood, green = safe
+      const circleColor = isFlood ? '#eab308' : '#22c55e';
 
       const circle = L.circle([lat, lng], {
         radius: 700,
@@ -130,7 +124,6 @@ const MapPage = () => {
         opacity: 0.85,
       }).addTo(map);
 
-      // Pulse animation via repeated setStyle
       let opacity = 0.35;
       let dir = -1;
       const pulseInterval = setInterval(() => {
@@ -141,17 +134,16 @@ const MapPage = () => {
       }, 80);
 
       circle.on('click', () => setSelectedPrediction(data));
-      // Store interval id on circle element for cleanup
       (circle as any)._pulseInterval = pulseInterval;
 
-      // Update pin
       pin.result = data;
       pin.circle = circle;
       pin.loadingMarker = null;
 
-      // Draw nearby offset centroid markers
+      // Track neighbour circles for cleanup
+      const neighbourCircles: L.Circle[] = [];
       data.nearby_points?.forEach(pt => {
-        L.circle([pt.lat, pt.lng], {
+        const nc = L.circle([pt.lat, pt.lng], {
           radius: 700,
           fillColor: circleColor,
           fillOpacity: 0.35,
@@ -160,13 +152,28 @@ const MapPage = () => {
           opacity: 0.85,
         }).addTo(map)
           .bindTooltip(`${pt.label}\n${pt.lat.toFixed(4)}, ${pt.lng.toFixed(4)}`, { direction: 'top' });
+        neighbourCircles.push(nc);
       });
+
+      // Fade out + remove all circles after 5 s
+      setTimeout(() => {
+        clearInterval(pulseInterval);
+        const allCircles = [circle, ...neighbourCircles];
+        let fadeOpacity = 0.35;
+        const fadeInterval = setInterval(() => {
+          fadeOpacity = Math.max(0, fadeOpacity - 0.05);
+          allCircles.forEach(c => c.setStyle({ fillOpacity: fadeOpacity, opacity: fadeOpacity }));
+          if (fadeOpacity <= 0) {
+            clearInterval(fadeInterval);
+            allCircles.forEach(c => c.remove());
+          }
+        }, 40);
+      }, 5000);
 
       setSelectedPrediction(data);
 
     } catch (err) {
       loadingMarker.remove();
-      // Show error circle (grey)
       L.circle([lat, lng], {
         radius: 700,
         fillColor: '#6b7280',
@@ -180,6 +187,11 @@ const MapPage = () => {
       );
     }
   }, []);
+
+  const handleFloodClick = useCallback((e: L.LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng;
+    runFloodPrediction(lat, lng);
+  }, [runFloodPrediction]);
 
   // Register / unregister click handler on mode toggle
   useEffect(() => {
@@ -291,14 +303,17 @@ const MapPage = () => {
   };
 
   const selectSearchResult = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lon = parseFloat(result.lon);
     if (mapInstance.current) {
-      const lat = parseFloat(result.lat);
-      const lon = parseFloat(result.lon);
       mapInstance.current.setView([lat, lon], 15, { animate: true });
     }
     setShowSearch(false);
     setSearchQuery('');
     setSearchResults([]);
+    if (floodDetectMode) {
+      runFloodPrediction(lat, lon);
+    }
   };
 
   return (
