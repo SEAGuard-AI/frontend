@@ -48,9 +48,9 @@ interface Prediction {
   nearest_area: string;
   lat: number;
   lng: number;
-  nearby_points: { lat: number; lng: number; label: string }[];
+  nearby_points?: { lat: number; lng: number; label: string }[];
   sensor_data: Record<string, number | string>;
-  type: "flood" | "landslide";
+  type: "flood" | "landslide" | "typhoon";
 }
 
 interface PredictionPin {
@@ -125,11 +125,14 @@ const MapPage = () => {
     const disasterType = filterTypeRef.current;
     const isFloodMode = disasterType === "flood";
     const isLandslideMode = disasterType === "landslide";
-    if (!isFloodMode && !isLandslideMode) return; // only flood & landslide supported
+    const isTyphoonMode = disasterType === "typhoon";
+    if (!isFloodMode && !isLandslideMode && !isTyphoonMode) return; // only flood, landslide & typhoon supported
 
     const endpoint = isFloodMode
       ? `${BACKEND_URL}/api/flood/predict`
-      : `${BACKEND_URL}/api/landslide/predict`;
+      : isLandslideMode
+        ? `${BACKEND_URL}/api/landslide/predict`
+        : `${BACKEND_URL}/api/typhoon/predict`;
 
     const pinId = `${Date.now()}`;
     const loadingMarker = L.marker([lat, lng], {
@@ -162,17 +165,21 @@ const MapPage = () => {
         ...raw,
         disaster_occurred: isFloodMode
           ? raw.flood_occurred
-          : raw.landslide_occurred,
-        type: disasterType as "flood" | "landslide",
+          : isLandslideMode
+            ? raw.landslide_occurred
+            : raw.typhoon_occurred,
+        type: disasterType as "flood" | "landslide" | "typhoon",
       };
       loadingMarker.remove();
 
       const isDisaster = data.disaster_occurred === 1;
-      // flood: yellow/green — landslide: orange/green
+      // flood: yellow — landslide: orange — typhoon: blue — safe: green
       const circleColor = isDisaster
         ? isFloodMode
           ? "#eab308"
-          : "#f97316"
+          : isTyphoonMode
+            ? "#3b82f6"
+            : "#f97316"
         : "#22c55e";
 
       const circle = L.circle([lat, lng], {
@@ -306,40 +313,6 @@ const MapPage = () => {
         map.removeLayer(l);
       }
     });
-
-    const filteredZones = disasterZones.filter(
-      (z) => z.country === selectedCountry && z.disasterType === filterType,
-    );
-
-    filteredZones.forEach((zone) => {
-      L.circle(zone.center, {
-        radius: zone.radius,
-        fillColor: zoneColors[zone.level],
-        fillOpacity: showHeatmap ? 0.25 : 0.15,
-        color: zoneColors[zone.level],
-        weight: 2,
-        opacity: 0.6,
-      })
-        .addTo(map)
-        .bindTooltip(zone.name, { permanent: false, direction: "top" });
-    });
-
-    const filteredClusters = populationClusters.filter(
-      (c) => c.country === selectedCountry && c.disasterType === filterType,
-    );
-
-    filteredClusters.forEach((cluster) => {
-      const color = zoneColors[cluster.severity];
-      const icon = L.divIcon({
-        className: "custom-marker",
-        html: `<div style="background:${color};color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.4)">${cluster.count}</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-      });
-      L.marker(cluster.position, { icon })
-        .addTo(map)
-        .on("click", () => setSelectedCluster(cluster));
-    });
   }, [selectedCountry, filterType, showHeatmap]);
 
   // Location search using Nominatim
@@ -387,7 +360,6 @@ const MapPage = () => {
 
       <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
         <div ref={mapRef} className="h-full w-full" />
-
         {/* Search Bar */}
         <div className="absolute top-4 left-4 right-4 z-[1000] space-y-1">
           <div className="flex items-center gap-2">
@@ -479,7 +451,7 @@ const MapPage = () => {
             </button>
           </div>
 
-          {/* Flood Detect Mode Banner */}
+          {/* Detect Mode Banner */}
           {detectMode && (
             <div className="flex items-center gap-2 clay-sm backdrop-blur-md bg-primary/10 border border-primary/30 px-3 py-1.5 animate-scale-in">
               <Droplets className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -488,7 +460,9 @@ const MapPage = () => {
                   ? "Click anywhere to predict flood risk"
                   : filterType === "landslide"
                     ? "Click anywhere to predict landslide risk"
-                    : "Switch filter to Flood or Landslide to enable predictions"}
+                    : filterType === "typhoon"
+                      ? "Click anywhere to check live typhoon conditions"
+                      : "Switch filter to Flood, Landslide, or Typhoon to enable predictions"}
               </p>
             </div>
           )}
@@ -523,41 +497,37 @@ const MapPage = () => {
             </div>
           )}
         </div>
-
         {/* Filter Panel */}
         {showFilters && (
           <div className="absolute top-16 right-4 z-[1000] clay backdrop-blur-md bg-card/80 p-3 space-y-2 w-44 animate-scale-in">
             <p className="text-xs font-medium text-muted-foreground">
               Disaster Type
             </p>
-            {(["flood", "landslide", "typhoon", "earthquake"] as const).map(
-              (t) => (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setFilterType(t);
-                    setShowFilters(false);
-                  }}
-                  className={cn(
-                    "w-full rounded-lg px-3 py-1.5 text-left text-sm transition-all",
-                    filterType === t
-                      ? "bg-primary/20 text-primary shadow-clay-sm"
-                      : "hover:bg-accent text-foreground",
-                  )}
-                >
-                  {t === "flood"
-                    ? "🌊 Flood"
-                    : t === "landslide"
-                      ? "⛰️ Landslide"
-                      : t === "typhoon"
-                        ? "🌀 Typhoon"
-                        : "🌍 Earthquake"}
-                </button>
-              ),
-            )}
+            {(["flood", "landslide", "typhoon"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  setFilterType(t);
+                  setShowFilters(false);
+                }}
+                className={cn(
+                  "w-full rounded-lg px-3 py-1.5 text-left text-sm transition-all",
+                  filterType === t
+                    ? "bg-primary/20 text-primary shadow-clay-sm"
+                    : "hover:bg-accent text-foreground",
+                )}
+              >
+                {t === "flood"
+                  ? "🌊 Flood"
+                  : t === "landslide"
+                    ? "⛰️ Landslide"
+                    : t === "typhoon"
+                      ? "🌀 Typhoon"
+                      : null}
+              </button>
+            ))}
           </div>
         )}
-
         {/* Zone Legend */}
         <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-md bg-card/70 p-3">
           <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
@@ -582,33 +552,38 @@ const MapPage = () => {
                 <p className="text-[10px] font-medium text-muted-foreground">
                   {filterType === "landslide"
                     ? "LANDSLIDE DETECT"
-                    : "FLOOD DETECT"}
+                    : filterType === "typhoon"
+                      ? "TYPHOON DETECT"
+                      : "FLOOD DETECT"}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                  <span className="text-[11px] text-foreground">
-                    Safe (No Risk)
-                  </span>
+                  <span className="text-[11px] text-foreground">No Risk</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
                     className="h-2.5 w-2.5 rounded-full"
                     style={{
                       background:
-                        filterType === "landslide" ? "#f97316" : "#eab308",
+                        filterType === "landslide"
+                          ? "#f97316"
+                          : filterType === "typhoon"
+                            ? "#3b82f6"
+                            : "#eab308",
                     }}
                   />
                   <span className="text-[11px] text-foreground">
                     {filterType === "landslide"
                       ? "Landslide Risk"
-                      : "Flood Risk"}
+                      : filterType === "typhoon"
+                        ? "Typhoon Detected"
+                        : "Flood Risk"}
                   </span>
                 </div>
               </>
             )}
           </div>
         </div>
-
         {/* Evacuation Route Button */}
         <div className="absolute bottom-4 right-4 z-[1000]">
           <Button
@@ -619,73 +594,63 @@ const MapPage = () => {
             Evacuate
           </Button>
         </div>
-
-        {/* ── Flood Prediction Result Sheet ── */}
+        {/* ── Prediction Result Sheet (Flood / Landslide / Typhoon) ── */}
         {selectedPrediction &&
           !selectedCluster &&
           (() => {
             const isFlood = selectedPrediction.type === "flood";
+            const isTyphoon = selectedPrediction.type === "typhoon";
             const occurred = selectedPrediction.disaster_occurred === 1;
             const accentColor = occurred
               ? isFlood
                 ? "#eab308"
-                : "#f97316"
+                : isTyphoon
+                  ? "#3b82f6"
+                  : "#f97316"
               : "#22c55e";
             const occLabel = occurred
               ? isFlood
                 ? "🌊 Flood Likely"
-                : "⛰️ Landslide Likely"
+                : isTyphoon
+                  ? "🌀 Typhoon Detected"
+                  : "⛰️ Landslide Likely"
               : "✅ No Risk";
-            const occIcon = occurred ? (isFlood ? "🌊" : "⛰️") : "✅";
+            const occIcon = occurred
+              ? isFlood
+                ? "🌊"
+                : isTyphoon
+                  ? "🌀"
+                  : "⛰️"
+              : "✅";
+            const sd = selectedPrediction.sensor_data;
             const sensorRows: [string, string][] = isFlood
               ? [
-                  [
-                    "🌧 Rainfall",
-                    `${selectedPrediction.sensor_data.rainfall_mm} mm`,
-                  ],
-                  [
-                    "🌡 Temperature",
-                    `${selectedPrediction.sensor_data.temperature_c}°C`,
-                  ],
-                  [
-                    "💧 Humidity",
-                    `${selectedPrediction.sensor_data.humidity_pct}%`,
-                  ],
-                  [
-                    "🏞 Water Level",
-                    `${selectedPrediction.sensor_data.water_level_m} m`,
-                  ],
-                  [
-                    "⛰ Elevation",
-                    `${selectedPrediction.sensor_data.elevation_m} m`,
-                  ],
-                  [
-                    "🌱 Land Cover",
-                    `${selectedPrediction.sensor_data.land_cover}`,
-                  ],
+                  ["🌧 Rainfall", `${sd.rainfall_mm} mm`],
+                  ["🌡 Temperature", `${sd.temperature_c}°C`],
+                  ["💧 Humidity", `${sd.humidity_pct}%`],
+                  ["🏞 Water Level", `${sd.water_level_m} m`],
+                  ["⛰ Elevation", `${sd.elevation_m} m`],
+                  ["🌱 Land Cover", `${sd.land_cover}`],
                 ]
-              : [
-                  [
-                    "🌡 Temperature",
-                    `${selectedPrediction.sensor_data.temperature_c}°C`,
-                  ],
-                  [
-                    "💧 Humidity",
-                    `${selectedPrediction.sensor_data.humidity_pct}%`,
-                  ],
-                  [
-                    "🌧 Precipitation",
-                    `${selectedPrediction.sensor_data.precipitation_mm} mm`,
-                  ],
-                  [
-                    "🪨 Soil Moisture",
-                    `${selectedPrediction.sensor_data.soil_moisture_pct}%`,
-                  ],
-                  [
-                    "⛰ Elevation",
-                    `${selectedPrediction.sensor_data.elevation_m} m`,
-                  ],
-                ];
+              : isTyphoon
+                ? [
+                    ["💨 Wind Speed", `${sd.wind_speed_ms} m/s`],
+                    ["💨 Wind Gust", `${sd.wind_gust_ms} m/s`],
+                    ["🧭 Wind Force", `${sd.wind_beaufort}`],
+                    ["🌡 Temperature", `${sd.temperature_c}°C`],
+                    ["💧 Humidity", `${sd.humidity_pct}%`],
+                    ["🌊 Pressure", `${sd.pressure_hpa} hPa`],
+                    ["☁️ Cloudiness", `${sd.cloudiness_pct}%`],
+                    ["🌧 Rainfall 1h", `${sd.rainfall_1h_mm} mm`],
+                    ["🌤 Conditions", `${sd.weather_description}`],
+                  ]
+                : [
+                    ["🌡 Temperature", `${sd.temperature_c}°C`],
+                    ["💧 Humidity", `${sd.humidity_pct}%`],
+                    ["🌧 Precipitation", `${sd.precipitation_mm} mm`],
+                    ["🪨 Soil Moisture", `${sd.soil_moisture_pct}%`],
+                    ["⛰ Elevation", `${sd.elevation_m} m`],
+                  ];
             return (
               <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
                 <div className="clay-lg backdrop-blur-md bg-card/90 rounded-b-none p-4 space-y-3">
@@ -701,7 +666,9 @@ const MapPage = () => {
                           className="text-xs font-semibold uppercase tracking-wider"
                           style={{ color: accentColor }}
                         >
-                          {selectedPrediction.risk_level} RISK
+                          {isTyphoon
+                            ? selectedPrediction.risk_level + " WIND"
+                            : selectedPrediction.risk_level + " RISK"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           — {occLabel}
@@ -738,12 +705,14 @@ const MapPage = () => {
                     </div>
                     <div className="clay-inset p-2.5 text-center">
                       <p className="text-base font-bold text-foreground">
-                        {selectedPrediction.confidence !== null
-                          ? `${(selectedPrediction.confidence * 100).toFixed(1)}%`
-                          : "—"}
+                        {isTyphoon
+                          ? `${selectedPrediction.sensor_data.wind_speed_ms} m/s`
+                          : selectedPrediction.confidence !== null
+                            ? `${(selectedPrediction.confidence * 100).toFixed(1)}%`
+                            : "—"}
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Confidence
+                        {isTyphoon ? "Wind Speed" : "Confidence"}
                       </p>
                     </div>
                     <div className="clay-inset p-2.5 text-center">
@@ -759,7 +728,9 @@ const MapPage = () => {
                   {/* Sensor data */}
                   <div className="clay-inset p-3 space-y-1.5">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      Sensor Data (Auto-generated)
+                      {isTyphoon
+                        ? "Live Weather Data (OpenWeatherMap)"
+                        : "Sensor Data (Auto-generated)"}
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                       {sensorRows.map(([label, val]) => (
@@ -779,7 +750,6 @@ const MapPage = () => {
               </div>
             );
           })()}
-
         {/* ── Cluster Bottom Sheet ── */}
         {selectedCluster && !selectedPrediction && (
           <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
@@ -862,7 +832,7 @@ const MapPage = () => {
               </div>
             </div>
           </div>
-        )}
+        )}{" "}
       </div>
     </div>
   );
