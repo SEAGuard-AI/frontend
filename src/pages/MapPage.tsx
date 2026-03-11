@@ -224,7 +224,7 @@ const MapPage = () => {
       setSelectedPrediction(data);
     } catch (err) {
       loadingMarker.remove();
-      L.circle([lat, lng], {
+      const errorCircle = L.circle([lat, lng], {
         radius: 700,
         fillColor: "#6b7280",
         fillOpacity: 0.25,
@@ -233,10 +233,23 @@ const MapPage = () => {
         opacity: 0.6,
       })
         .addTo(map)
-        .bindTooltip(
-          `⚠️ ${err instanceof Error ? err.message : "Prediction failed"}`,
-          { direction: "top", permanent: true },
-        );
+        .bindTooltip("⚠️ Not Available", { direction: "top", permanent: true });
+
+      // Fade out + remove error circle after 5 s
+      setTimeout(() => {
+        let fadeOpacity = 0.25;
+        const fadeInterval = setInterval(() => {
+          fadeOpacity = Math.max(0, fadeOpacity - 0.05);
+          errorCircle.setStyle({
+            fillOpacity: fadeOpacity,
+            opacity: fadeOpacity,
+          });
+          if (fadeOpacity <= 0) {
+            clearInterval(fadeInterval);
+            errorCircle.remove();
+          }
+        }, 40);
+      }, 5000);
     }
   }, []);
 
