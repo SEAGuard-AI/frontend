@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  countryFlags
+  countryFlags,
+  aseanCountries,
 } from '@/data/mockData';
 import { usePreferences } from '@/contexts/UserPreferencesContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -68,6 +69,8 @@ const HomePage = () => {
   });
 
   const sortedStatuses = [...countryStatuses].sort((a, b) => b.activeDisasters - a.activeDisasters);
+  const aseanCountrySet = new Set<string>(aseanCountries);
+  const aseanRegionalNews = globalNews.filter((news) => aseanCountrySet.has(news.country));
 
   const getNewsImage = (news: DisasterNewsItem) => {
     const typeKey = news.disasterType as keyof typeof newsImages;
@@ -296,7 +299,7 @@ const HomePage = () => {
         )}
         {!isGlobalNewsLoading && !isGlobalNewsError && (
           <div className="space-y-2">
-            {globalNews.map((news, i) => (
+            {aseanRegionalNews.map((news, i) => (
               <button
                 key={news.id}
                 onClick={() => openNews(news)}
@@ -312,7 +315,7 @@ const HomePage = () => {
                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
               </button>
             ))}
-            {globalNews.length === 0 && (
+            {aseanRegionalNews.length === 0 && (
               <div className="w-full rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
                 No global alerts available yet.
               </div>

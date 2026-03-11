@@ -121,3 +121,48 @@ export const dashboardApi = {
   getSurvivalTips: () =>
     apiFetch('/guides/survival') as Promise<SurvivalTipItem[]>,
 };
+
+export interface DisasterZoneItem {
+  id: string;
+  centerLat: number;
+  centerLng: number;
+  radius: number;
+  level: string;
+  disasterType: string;
+  name: string;
+  country: string;
+  description: string;
+}
+
+export interface DisasterReportItem {
+  id: string;
+  country: string;
+  disasterType: string;
+  severity: string;
+  date: string;
+  affectedPopulation: number;
+  title: string;
+  summary: string;
+}
+
+export interface ReportTimelineItem {
+  time: string;
+  event: string;
+}
+
+export interface DisasterReportDetailItem extends DisasterReportItem {
+  timeline: ReportTimelineItem[];
+}
+
+export const countryApi = {
+  getCountryStatus: (country: string) =>
+    apiFetch(`/countries/${encodeURIComponent(country)}`) as Promise<CountryStatusItem>,
+  getCountryNews: (country: string) =>
+    apiFetch(`/news?country=${encodeURIComponent(country)}`) as Promise<DisasterNewsItem[]>,
+  getCountryZones: (country: string) =>
+    apiFetch(`/disasters/zones?country=${encodeURIComponent(country)}`) as Promise<DisasterZoneItem[]>,
+  getCountryReports: (country: string) =>
+    apiFetch(`/reports?country=${encodeURIComponent(country)}`) as Promise<DisasterReportItem[]>,
+  getReportDetail: (id: string) =>
+    apiFetch(`/reports/${encodeURIComponent(id)}`) as Promise<DisasterReportDetailItem>,
+};
