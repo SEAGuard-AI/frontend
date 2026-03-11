@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ModernMapHero from "@/components/ModernMapHero";
@@ -155,6 +155,31 @@ const LandingPage = () => {
 					</div>
 				</div>
 			</main>
+
+			{/* App Showcase Section */}
+			<section className="relative w-full max-w-7xl mx-auto px-6 py-10 lg:py-16 z-10 flex flex-col items-center">
+
+				{/* Heading */}
+				<h2 className="text-2xl lg:text-5xl font-black tracking-tight text-center max-w-3xl mb-4 lg:mb-8 px-4">
+					A simple and trusted disaster response and recovery platform
+				</h2>
+
+				{/* Images Container */}
+				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center mt-12 px-4 sm:px-8 pb-16">
+					{/* Macbook */}
+					<img 
+						src="/macbook.png" 
+						alt="Dashboard on Macbook" 
+						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-float ml-auto"
+					/>
+					{/* Phone */}
+					<img 
+						src="/phone.png" 
+						alt="Mobile app on Phone" 
+						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[35%] sm:bottom-[45%] lg:bottom-[40%] w-[55%] md:w-[45%] lg:w-[40%] max-w-[320px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 animate-float-reverse"
+					/>
+				</div>
+			</section>
 
 			{/* Decorative background elements */}
 			<div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
