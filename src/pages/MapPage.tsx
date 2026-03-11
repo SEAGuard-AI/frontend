@@ -1,28 +1,44 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef, useState, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
-  disasterZones, populationClusters, aseanCountries,
-  countryDefaultCenters, type PopulationCluster, type ZoneLevel, type DisasterType
-} from '@/data/mockData';
-import { X, Layers, Filter, ChevronDown, Navigation, Phone, MapPin, Search, Droplets, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
-import { usePreferences } from '@/contexts/UserPreferencesContext';
+  disasterZones,
+  populationClusters,
+  aseanCountries,
+  countryDefaultCenters,
+  type PopulationCluster,
+  type ZoneLevel,
+  type DisasterType,
+} from "@/data/mockData";
+import {
+  X,
+  Layers,
+  Filter,
+  ChevronDown,
+  Navigation,
+  Phone,
+  MapPin,
+  Search,
+  Droplets,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { usePreferences } from "@/contexts/UserPreferencesContext";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:3000";
 
 const zoneColors: Record<ZoneLevel, string> = {
-  evacuation: '#22c55e',
-  caution: '#eab308',
-  danger: '#ef4444',
+  evacuation: "#22c55e",
+  caution: "#eab308",
+  danger: "#ef4444",
 };
 
 const zoneLabels: Record<ZoneLevel, string> = {
-  evacuation: 'Evacuation Point',
-  caution: 'Caution',
-  danger: 'Danger',
+  evacuation: "Evacuation Point",
+  caution: "Caution",
+  danger: "Danger",
 };
 
 interface Prediction {
@@ -32,9 +48,9 @@ interface Prediction {
   nearest_area: string;
   lat: number;
   lng: number;
-  nearby_points: { lat: number; lng: number; label: string }[];
+  nearby_points?: { lat: number; lng: number; label: string }[];
   sensor_data: Record<string, number | string>;
-  type: 'flood' | 'landslide';
+  type: "flood" | "landslide" | "typhoon";
 }
 
 interface PredictionPin {
@@ -49,14 +65,17 @@ interface PredictionPin {
 const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const [selectedCluster, setSelectedCluster] = useState<PopulationCluster | null>(null);
+  const [selectedCluster, setSelectedCluster] =
+    useState<PopulationCluster | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(true);
-  const [filterType, setFilterType] = useState<DisasterType>('flood');
+  const [filterType, setFilterType] = useState<DisasterType>("flood");
   const { preferences } = usePreferences();
-  const [selectedCountry, setSelectedCountry] = useState(preferences.country || 'Indonesia');
+  const [selectedCountry, setSelectedCountry] = useState(
+    preferences.country || "Indonesia",
+  );
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -65,15 +84,19 @@ const MapPage = () => {
 
   // ── Predict Mode ─────────────────────────────────────────────────────────
   const [detectMode, setDetectMode] = useState(false);
-  const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
+  const [selectedPrediction, setSelectedPrediction] =
+    useState<Prediction | null>(null);
   const pinsRef = useRef<PredictionPin[]>([]);
-  const clickHandlerRef = useRef<((e: L.LeafletMouseEvent) => void) | null>(null);
+  const clickHandlerRef = useRef<((e: L.LeafletMouseEvent) => void) | null>(
+    null,
+  );
   const filterTypeRef = useRef<DisasterType>(filterType);
 
   // Loading marker HTML
-  const makeLoadingIcon = () => L.divIcon({
-    className: '',
-    html: `<div style="
+  const makeLoadingIcon = () =>
+    L.divIcon({
+      className: "",
+      html: `<div style="
       width:32px;height:32px;border-radius:50%;
       background:rgba(100,100,100,0.6);
       border:2px solid rgba(255,255,255,0.6);
@@ -85,12 +108,14 @@ const MapPage = () => {
         <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
       </svg>
     </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
 
   // Keep filterTypeRef in sync so the click callback always reads fresh value
-  useEffect(() => { filterTypeRef.current = filterType; }, [filterType]);
+  useEffect(() => {
+    filterTypeRef.current = filterType;
+  }, [filterType]);
 
   // Handle map click for prediction
   const runPrediction = useCallback(async (lat: number, lng: number) => {
@@ -98,23 +123,35 @@ const MapPage = () => {
     if (!map) return;
 
     const disasterType = filterTypeRef.current;
-    const isFloodMode = disasterType === 'flood';
-    const isLandslideMode = disasterType === 'landslide';
-    if (!isFloodMode && !isLandslideMode) return; // only flood & landslide supported
+    const isFloodMode = disasterType === "flood";
+    const isLandslideMode = disasterType === "landslide";
+    const isTyphoonMode = disasterType === "typhoon";
+    if (!isFloodMode && !isLandslideMode && !isTyphoonMode) return; // only flood, landslide & typhoon supported
 
     const endpoint = isFloodMode
       ? `${BACKEND_URL}/api/flood/predict`
-      : `${BACKEND_URL}/api/landslide/predict`;
+      : isLandslideMode
+        ? `${BACKEND_URL}/api/landslide/predict`
+        : `${BACKEND_URL}/api/typhoon/predict`;
 
     const pinId = `${Date.now()}`;
-    const loadingMarker = L.marker([lat, lng], { icon: makeLoadingIcon() }).addTo(map);
-    const pin: PredictionPin = { id: pinId, lat, lng, result: null, circle: null, loadingMarker };
+    const loadingMarker = L.marker([lat, lng], {
+      icon: makeLoadingIcon(),
+    }).addTo(map);
+    const pin: PredictionPin = {
+      id: pinId,
+      lat,
+      lng,
+      result: null,
+      circle: null,
+      loadingMarker,
+    };
     pinsRef.current.push(pin);
 
     try {
       const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lat, lng }),
       });
 
@@ -123,19 +160,27 @@ const MapPage = () => {
         throw new Error((errBody as any).error ?? `Server error ${res.status}`);
       }
 
-      const raw = await res.json() as any;
+      const raw = (await res.json()) as any;
       const data: Prediction = {
         ...raw,
-        disaster_occurred: isFloodMode ? raw.flood_occurred : raw.landslide_occurred,
-        type: disasterType as 'flood' | 'landslide',
+        disaster_occurred: isFloodMode
+          ? raw.flood_occurred
+          : isLandslideMode
+            ? raw.landslide_occurred
+            : raw.typhoon_occurred,
+        type: disasterType as "flood" | "landslide" | "typhoon",
       };
       loadingMarker.remove();
 
       const isDisaster = data.disaster_occurred === 1;
-      // flood: yellow/green — landslide: orange/green
+      // flood: yellow — landslide: orange — typhoon: blue — safe: green
       const circleColor = isDisaster
-        ? (isFloodMode ? '#eab308' : '#f97316')
-        : '#22c55e';
+        ? isFloodMode
+          ? "#eab308"
+          : isTyphoonMode
+            ? "#3b82f6"
+            : "#f97316"
+        : "#22c55e";
 
       const circle = L.circle([lat, lng], {
         radius: 700,
@@ -151,69 +196,70 @@ const MapPage = () => {
       const pulseInterval = setInterval(() => {
         opacity += dir * 0.04;
         if (opacity <= 0.15) dir = 1;
-        if (opacity >= 0.4)  dir = -1;
+        if (opacity >= 0.4) dir = -1;
         circle.setStyle({ fillOpacity: opacity });
       }, 80);
 
-      circle.on('click', () => setSelectedPrediction(data));
+      circle.on("click", () => setSelectedPrediction(data));
       (circle as any)._pulseInterval = pulseInterval;
 
       pin.result = data;
       pin.circle = circle;
       pin.loadingMarker = null;
 
-      // Track neighbour circles for cleanup
-      const neighbourCircles: L.Circle[] = [];
-      data.nearby_points?.forEach(pt => {
-        const nc = L.circle([pt.lat, pt.lng], {
-          radius: 700,
-          fillColor: circleColor,
-          fillOpacity: 0.35,
-          color: circleColor,
-          weight: 2.5,
-          opacity: 0.85,
-        }).addTo(map)
-          .bindTooltip(`${pt.label}\n${pt.lat.toFixed(4)}, ${pt.lng.toFixed(4)}`, { direction: 'top' });
-        neighbourCircles.push(nc);
-      });
-
-      // Fade out + remove all circles after 5 s
+      // Fade out + remove main circle after 5 s
       setTimeout(() => {
         clearInterval(pulseInterval);
-        const allCircles = [circle, ...neighbourCircles];
         let fadeOpacity = 0.35;
         const fadeInterval = setInterval(() => {
           fadeOpacity = Math.max(0, fadeOpacity - 0.05);
-          allCircles.forEach(c => c.setStyle({ fillOpacity: fadeOpacity, opacity: fadeOpacity }));
+          circle.setStyle({ fillOpacity: fadeOpacity, opacity: fadeOpacity });
           if (fadeOpacity <= 0) {
             clearInterval(fadeInterval);
-            allCircles.forEach(c => c.remove());
+            circle.remove();
           }
         }, 40);
       }, 5000);
 
       setSelectedPrediction(data);
-
     } catch (err) {
       loadingMarker.remove();
-      L.circle([lat, lng], {
+      const errorCircle = L.circle([lat, lng], {
         radius: 700,
-        fillColor: '#6b7280',
+        fillColor: "#6b7280",
         fillOpacity: 0.25,
-        color: '#6b7280',
+        color: "#6b7280",
         weight: 2,
         opacity: 0.6,
-      }).addTo(map).bindTooltip(
-        `⚠️ ${err instanceof Error ? err.message : 'Prediction failed'}`,
-        { direction: 'top', permanent: true }
-      );
+      })
+        .addTo(map)
+        .bindTooltip("⚠️ Not Available", { direction: "top", permanent: true });
+
+      // Fade out + remove error circle after 5 s
+      setTimeout(() => {
+        let fadeOpacity = 0.25;
+        const fadeInterval = setInterval(() => {
+          fadeOpacity = Math.max(0, fadeOpacity - 0.05);
+          errorCircle.setStyle({
+            fillOpacity: fadeOpacity,
+            opacity: fadeOpacity,
+          });
+          if (fadeOpacity <= 0) {
+            clearInterval(fadeInterval);
+            errorCircle.remove();
+          }
+        }, 40);
+      }, 5000);
     }
   }, []);
 
-  const handleMapClick = useCallback((e: L.LeafletMouseEvent) => {
-    const { lat, lng } = e.latlng;
-    runPrediction(lat, lng);
-  }, [runPrediction]);
+  const handleMapClick = useCallback(
+    (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      runPrediction(lat, lng);
+    },
+    [runPrediction],
+  );
 
   // Register / unregister click handler on mode toggle
   useEffect(() => {
@@ -222,38 +268,45 @@ const MapPage = () => {
 
     if (detectMode) {
       clickHandlerRef.current = handleMapClick;
-      map.on('click', handleMapClick);
-      map.getContainer().style.cursor = 'crosshair';
+      map.on("click", handleMapClick);
+      map.getContainer().style.cursor = "crosshair";
     } else {
       if (clickHandlerRef.current) {
-        map.off('click', clickHandlerRef.current);
+        map.off("click", clickHandlerRef.current);
         clickHandlerRef.current = null;
       }
-      map.getContainer().style.cursor = '';
+      map.getContainer().style.cursor = "";
     }
 
     return () => {
       if (clickHandlerRef.current) {
-        map.off('click', clickHandlerRef.current);
+        map.off("click", clickHandlerRef.current);
         clickHandlerRef.current = null;
       }
-      map.getContainer().style.cursor = '';
+      map.getContainer().style.cursor = "";
     };
   }, [detectMode, handleMapClick]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
-    const center = countryDefaultCenters[selectedCountry] || [-6.200, 106.845];
+    const center = countryDefaultCenters[selectedCountry] || [-6.2, 106.845];
     const map = L.map(mapRef.current, {
-      center, zoom: 13, zoomControl: false, attributionControl: false,
+      center,
+      zoom: 13,
+      zoomControl: false,
+      attributionControl: false,
     });
-    L.control.zoom({ position: 'topright' }).addTo(map);
-    const tileUrl = preferences.theme === 'dark'
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    L.control.zoom({ position: "topright" }).addTo(map);
+    const tileUrl =
+      preferences.theme === "dark"
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
     L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
     mapInstance.current = map;
-    return () => { map.remove(); mapInstance.current = null; };
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -266,42 +319,12 @@ const MapPage = () => {
   useEffect(() => {
     if (!mapInstance.current) return;
     const map = mapInstance.current;
-    map.eachLayer(l => {
+    map.eachLayer((l) => {
       if (!(l instanceof L.TileLayer)) {
         // Don't remove flood prediction circles/markers
         if ((l as any)._isFloodPrediction) return;
         map.removeLayer(l);
       }
-    });
-
-    const filteredZones = disasterZones.filter(z =>
-      z.country === selectedCountry && z.disasterType === filterType
-    );
-
-    filteredZones.forEach(zone => {
-      L.circle(zone.center, {
-        radius: zone.radius,
-        fillColor: zoneColors[zone.level],
-        fillOpacity: showHeatmap ? 0.25 : 0.15,
-        color: zoneColors[zone.level],
-        weight: 2, opacity: 0.6,
-      }).addTo(map).bindTooltip(zone.name, { permanent: false, direction: 'top' });
-    });
-
-    const filteredClusters = populationClusters.filter(c =>
-      c.country === selectedCountry && c.disasterType === filterType
-    );
-
-    filteredClusters.forEach(cluster => {
-      const color = zoneColors[cluster.severity];
-      const icon = L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="background:${color};color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.4)">${cluster.count}</div>`,
-        iconSize: [36, 36], iconAnchor: [18, 18],
-      });
-      L.marker(cluster.position, { icon })
-        .addTo(map)
-        .on('click', () => setSelectedCluster(cluster));
     });
   }, [selectedCountry, filterType, showHeatmap]);
 
@@ -309,17 +332,22 @@ const MapPage = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (query.length < 2) { setSearchResults([]); return; }
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
 
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=${getCountryCode(selectedCountry)}&limit=6&addressdetails=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=${getCountryCode(selectedCountry)}&limit=6&addressdetails=1`,
         );
         const data = await res.json();
         setSearchResults(data);
-      } catch { setSearchResults([]); }
+      } catch {
+        setSearchResults([]);
+      }
       setIsSearching(false);
     }, 400);
   };
@@ -331,7 +359,7 @@ const MapPage = () => {
       mapInstance.current.setView([lat, lon], 15, { animate: true });
     }
     setShowSearch(false);
-    setSearchQuery('');
+    setSearchQuery("");
     setSearchResults([]);
     if (detectMode) {
       runPrediction(lat, lon);
@@ -340,321 +368,485 @@ const MapPage = () => {
 
   return (
     <div className="h-full w-full p-3">
+      {/* CSS for loading spinner */}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-    {/* CSS for loading spinner */}
-    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
+        <div ref={mapRef} className="h-full w-full" />
+        {/* Search Bar */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] space-y-1">
+          <div className="flex items-center gap-2">
+            {/* Country Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowCountryPicker(!showCountryPicker)}
+                className="flex items-center gap-1.5 clay-sm backdrop-blur-md bg-card/70 px-2.5 py-2 text-sm font-medium text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
+              >
+                <MapPin className="h-4 w-4 text-primary" />
+                <ChevronDown className="h-3 w-3" />
+              </button>
+              {showCountryPicker && (
+                <div className="absolute top-full mt-1 w-48 clay backdrop-blur-md bg-card/80 overflow-hidden max-h-60 overflow-y-auto animate-scale-in">
+                  {aseanCountries.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        setSelectedCountry(c);
+                        setShowCountryPicker(false);
+                      }}
+                      className={cn(
+                        "w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
+                        c === selectedCountry &&
+                          "bg-accent text-primary font-medium",
+                      )}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-    <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
-      <div ref={mapRef} className="h-full w-full" />
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={`Search location in ${selectedCountry}...`}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => setShowSearch(true)}
+                className="w-full rounded-[var(--radius)] bg-card/70 backdrop-blur-md shadow-clay-sm px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-white/20"
+                style={{
+                  boxShadow: "var(--clay-shadow-sm), var(--clay-inner-sm)",
+                }}
+              />
+            </div>
 
-      {/* Search Bar */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] space-y-1">
-        <div className="flex items-center gap-2">
-          {/* Country Switcher */}
-          <div className="relative">
+            {/* Flood Detect Mode Toggle */}
             <button
-              onClick={() => setShowCountryPicker(!showCountryPicker)}
-              className="flex items-center gap-1.5 clay-sm backdrop-blur-md bg-card/70 px-2.5 py-2 text-sm font-medium text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
-            >
-              <MapPin className="h-4 w-4 text-primary" />
-              <ChevronDown className="h-3 w-3" />
-            </button>
-            {showCountryPicker && (
-              <div className="absolute top-full mt-1 w-48 clay backdrop-blur-md bg-card/80 overflow-hidden max-h-60 overflow-y-auto animate-scale-in">
-                {aseanCountries.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => { setSelectedCountry(c); setShowCountryPicker(false); }}
-                    className={cn(
-                      'w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
-                      c === selectedCountry && 'bg-accent text-primary font-medium'
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder={`Search location in ${selectedCountry}...`}
-              value={searchQuery}
-              onChange={e => handleSearch(e.target.value)}
-              onFocus={() => setShowSearch(true)}
-              className="w-full rounded-[var(--radius)] bg-card/70 backdrop-blur-md shadow-clay-sm px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-white/20"
-              style={{ boxShadow: 'var(--clay-shadow-sm), var(--clay-inner-sm)' }}
-            />
-          </div>
-
-          {/* Flood Detect Mode Toggle */}
-          <button
-            onClick={() => { setDetectMode(v => !v); setSelectedPrediction(null); setSelectedCluster(null); }}
-            title="Detect Mode — click any map location to predict risk"
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
-              detectMode
-                ? 'clay-primary text-primary rounded-[var(--radius)]'
-                : 'clay-sm bg-card/70 text-foreground hover:shadow-clay rounded-[var(--radius)]'
-            )}
-          >
-            <Droplets className="h-4 w-4" />
-            {detectMode && <span className="text-xs hidden sm:inline">Detect</span>}
-          </button>
-
-          {/* Filter & Heatmap toggles */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="clay-sm backdrop-blur-md bg-card/70 p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
-          >
-            <Filter className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setShowHeatmap(!showHeatmap)}
-            className={cn(
-              'backdrop-blur-md bg-card/70 p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce',
-              showHeatmap ? 'clay-primary text-primary' : 'clay-sm text-foreground hover:shadow-clay'
-            )}
-          >
-            <Layers className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Flood Detect Mode Banner */}
-        {detectMode && (
-          <div className="flex items-center gap-2 clay-sm backdrop-blur-md bg-primary/10 border border-primary/30 px-3 py-1.5 animate-scale-in">
-            <Droplets className="h-3.5 w-3.5 text-primary shrink-0" />
-            <p className="text-xs text-primary font-medium">
-              {filterType === 'flood' ? 'Click anywhere to predict flood risk' : filterType === 'landslide' ? 'Click anywhere to predict landslide risk' : 'Switch filter to Flood or Landslide to enable predictions'}
-            </p>
-          </div>
-        )}
-
-        {/* Search Results Dropdown */}
-        {showSearch && searchQuery.length >= 2 && (
-          <div className="clay backdrop-blur-md bg-card/80 overflow-hidden animate-scale-in">
-            {isSearching ? (
-              <div className="px-3 py-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin" /> Searching...
-              </div>
-            ) : searchResults.length > 0 ? (
-              searchResults.map((r, i) => (
-                <button
-                  key={i}
-                  onClick={() => selectSearchResult(r)}
-                  className="w-full px-3 py-2.5 text-left hover:bg-accent transition-colors border-b border-border/30 last:border-0"
-                >
-                  <p className="text-sm text-foreground truncate">{r.display_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{r.type}</p>
-                </button>
-              ))
-            ) : (
-              <div className="px-3 py-4 text-center text-xs text-muted-foreground">No results found</div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Filter Panel */}
-      {showFilters && (
-        <div className="absolute top-16 right-4 z-[1000] clay backdrop-blur-md bg-card/80 p-3 space-y-2 w-44 animate-scale-in">
-          <p className="text-xs font-medium text-muted-foreground">Disaster Type</p>
-          {(['flood', 'landslide', 'typhoon', 'earthquake'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => { setFilterType(t); setShowFilters(false); }}
+              onClick={() => {
+                setDetectMode((v) => !v);
+                setSelectedPrediction(null);
+                setSelectedCluster(null);
+              }}
+              title="Detect Mode — click any map location to predict risk"
               className={cn(
-                'w-full rounded-lg px-3 py-1.5 text-left text-sm transition-all',
-                filterType === t ? 'bg-primary/20 text-primary shadow-clay-sm' : 'hover:bg-accent text-foreground'
+                "flex items-center gap-1.5 px-2.5 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce",
+                detectMode
+                  ? "clay-primary text-primary rounded-[var(--radius)]"
+                  : "clay-sm bg-card/70 text-foreground hover:shadow-clay rounded-[var(--radius)]",
               )}
             >
-              {t === 'flood' ? '🌊 Flood' : t === 'landslide' ? '⛰️ Landslide' : t === 'typhoon' ? '🌀 Typhoon' : '🌍 Earthquake'}
+              <Droplets className="h-4 w-4" />
+              {detectMode && (
+                <span className="text-xs hidden sm:inline">Detect</span>
+              )}
             </button>
-          ))}
-        </div>
-      )}
 
-      {/* Zone Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-md bg-card/70 p-3">
-        <p className="text-[10px] font-medium text-muted-foreground mb-1.5">ZONE STATUS</p>
-        <div className="space-y-1">
-          {(Object.entries(zoneLabels) as [ZoneLevel, string][]).map(([level, label]) => (
-            <div key={level} className="flex items-center gap-2">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ background: zoneColors[level] }} />
-              <span className="text-[11px] text-foreground">{label}</span>
-            </div>
-          ))}
-          {/* Detect Mode legend rows */}
+            {/* Filter & Heatmap toggles */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="clay-sm backdrop-blur-md bg-card/70 p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
+            >
+              <Filter className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              className={cn(
+                "backdrop-blur-md bg-card/70 p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce",
+                showHeatmap
+                  ? "clay-primary text-primary"
+                  : "clay-sm text-foreground hover:shadow-clay",
+              )}
+            >
+              <Layers className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Detect Mode Banner */}
           {detectMode && (
-            <>
-              <div className="my-1 border-t border-border/30" />
-              <p className="text-[10px] font-medium text-muted-foreground">
-                {filterType === 'landslide' ? 'LANDSLIDE DETECT' : 'FLOOD DETECT'}
+            <div className="flex items-center gap-2 clay-sm backdrop-blur-md bg-primary/10 border border-primary/30 px-3 py-1.5 animate-scale-in">
+              <Droplets className="h-3.5 w-3.5 text-primary shrink-0" />
+              <p className="text-xs text-primary font-medium">
+                {filterType === "flood"
+                  ? "Click anywhere to predict flood risk"
+                  : filterType === "landslide"
+                    ? "Click anywhere to predict landslide risk"
+                    : filterType === "typhoon"
+                      ? "Click anywhere to check live typhoon conditions"
+                      : "Switch filter to Flood, Landslide, or Typhoon to enable predictions"}
               </p>
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                <span className="text-[11px] text-foreground">Safe (No Risk)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ background: filterType === 'landslide' ? '#f97316' : '#eab308' }} />
-                <span className="text-[11px] text-foreground">{filterType === 'landslide' ? 'Landslide Risk' : 'Flood Risk'}</span>
-              </div>
-            </>
+            </div>
+          )}
+
+          {/* Search Results Dropdown */}
+          {showSearch && searchQuery.length >= 2 && (
+            <div className="clay backdrop-blur-md bg-card/80 overflow-hidden animate-scale-in">
+              {isSearching ? (
+                <div className="px-3 py-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Searching...
+                </div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((r, i) => (
+                  <button
+                    key={i}
+                    onClick={() => selectSearchResult(r)}
+                    className="w-full px-3 py-2.5 text-left hover:bg-accent transition-colors border-b border-border/30 last:border-0"
+                  >
+                    <p className="text-sm text-foreground truncate">
+                      {r.display_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {r.type}
+                    </p>
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                  No results found
+                </div>
+              )}
+            </div>
           )}
         </div>
-      </div>
+        {/* Filter Panel */}
+        {showFilters && (
+          <div className="absolute top-16 right-4 z-[1000] clay backdrop-blur-md bg-card/80 p-3 space-y-2 w-44 animate-scale-in">
+            <p className="text-xs font-medium text-muted-foreground">
+              Disaster Type
+            </p>
+            {(["flood", "landslide", "typhoon"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  setFilterType(t);
+                  setShowFilters(false);
+                }}
+                className={cn(
+                  "w-full rounded-lg px-3 py-1.5 text-left text-sm transition-all",
+                  filterType === t
+                    ? "bg-primary/20 text-primary shadow-clay-sm"
+                    : "hover:bg-accent text-foreground",
+                )}
+              >
+                {t === "flood"
+                  ? "🌊 Flood"
+                  : t === "landslide"
+                    ? "⛰️ Landslide"
+                    : t === "typhoon"
+                      ? "🌀 Typhoon"
+                      : null}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Zone Legend */}
+        <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-md bg-card/70 p-3">
+          <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
+            ZONE STATUS
+          </p>
+          <div className="space-y-1">
+            {(Object.entries(zoneLabels) as [ZoneLevel, string][]).map(
+              ([level, label]) => (
+                <div key={level} className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ background: zoneColors[level] }}
+                  />
+                  <span className="text-[11px] text-foreground">{label}</span>
+                </div>
+              ),
+            )}
+            {/* Detect Mode legend rows */}
+            {detectMode && (
+              <>
+                <div className="my-1 border-t border-border/30" />
+                <p className="text-[10px] font-medium text-muted-foreground">
+                  {filterType === "landslide"
+                    ? "LANDSLIDE DETECT"
+                    : filterType === "typhoon"
+                      ? "TYPHOON DETECT"
+                      : "FLOOD DETECT"}
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  <span className="text-[11px] text-foreground">No Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{
+                      background:
+                        filterType === "landslide"
+                          ? "#f97316"
+                          : filterType === "typhoon"
+                            ? "#3b82f6"
+                            : "#eab308",
+                    }}
+                  />
+                  <span className="text-[11px] text-foreground">
+                    {filterType === "landslide"
+                      ? "Landslide Risk"
+                      : filterType === "typhoon"
+                        ? "Typhoon Detected"
+                        : "Flood Risk"}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        {/* Evacuation Route Button */}
+        <div className="absolute bottom-4 right-4 z-[1000]">
+          <Button
+            onClick={() => navigate("/evacuation")}
+            className="h-12 rounded-xl clay-primary gap-2 font-semibold transition-all duration-300 hover:-translate-y-1 active:animate-clay-bounce"
+          >
+            <Navigation className="h-4 w-4" />
+            Evacuate
+          </Button>
+        </div>
+        {/* ── Prediction Result Sheet (Flood / Landslide / Typhoon) ── */}
+        {selectedPrediction &&
+          !selectedCluster &&
+          (() => {
+            const isFlood = selectedPrediction.type === "flood";
+            const isTyphoon = selectedPrediction.type === "typhoon";
+            const occurred = selectedPrediction.disaster_occurred === 1;
+            const accentColor = occurred
+              ? isFlood
+                ? "#eab308"
+                : isTyphoon
+                  ? "#3b82f6"
+                  : "#f97316"
+              : "#22c55e";
+            const occLabel = occurred
+              ? isFlood
+                ? "🌊 Flood Likely"
+                : isTyphoon
+                  ? "🌀 Typhoon Detected"
+                  : "⛰️ Landslide Likely"
+              : "✅ No Risk";
+            const occIcon = occurred
+              ? isFlood
+                ? "🌊"
+                : isTyphoon
+                  ? "🌀"
+                  : "⛰️"
+              : "✅";
+            const sd = selectedPrediction.sensor_data;
+            const sensorRows: [string, string][] = isFlood
+              ? [
+                  ["🌧 Rainfall", `${sd.rainfall_mm} mm`],
+                  ["🌡 Temperature", `${sd.temperature_c}°C`],
+                  ["💧 Humidity", `${sd.humidity_pct}%`],
+                  ["🏞 Water Level", `${sd.water_level_m} m`],
+                  ["⛰ Elevation", `${sd.elevation_m} m`],
+                  ["🌱 Land Cover", `${sd.land_cover}`],
+                ]
+              : isTyphoon
+                ? [
+                    ["💨 Wind Speed", `${sd.wind_speed_ms} m/s`],
+                    ["💨 Wind Gust", `${sd.wind_gust_ms} m/s`],
+                    ["🧭 Wind Force", `${sd.wind_beaufort}`],
+                    ["🌡 Temperature", `${sd.temperature_c}°C`],
+                    ["💧 Humidity", `${sd.humidity_pct}%`],
+                    ["🌊 Pressure", `${sd.pressure_hpa} hPa`],
+                    ["☁️ Cloudiness", `${sd.cloudiness_pct}%`],
+                    ["🌧 Rainfall 1h", `${sd.rainfall_1h_mm} mm`],
+                    ["🌤 Conditions", `${sd.weather_description}`],
+                  ]
+                : [
+                    ["🌡 Temperature", `${sd.temperature_c}°C`],
+                    ["💧 Humidity", `${sd.humidity_pct}%`],
+                    ["🌧 Precipitation", `${sd.precipitation_mm} mm`],
+                    ["🪨 Soil Moisture", `${sd.soil_moisture_pct}%`],
+                    ["⛰ Elevation", `${sd.elevation_m} m`],
+                  ];
+            return (
+              <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
+                <div className="clay-lg backdrop-blur-md bg-card/90 rounded-b-none p-4 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full animate-pulse-emergency"
+                          style={{ background: accentColor }}
+                        />
+                        <span
+                          className="text-xs font-semibold uppercase tracking-wider"
+                          style={{ color: accentColor }}
+                        >
+                          {isTyphoon
+                            ? selectedPrediction.risk_level + " WIND"
+                            : selectedPrediction.risk_level + " RISK"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          — {occLabel}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground mt-1">
+                        {selectedPrediction.nearest_area}
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        📍 {selectedPrediction.lat.toFixed(5)},{" "}
+                        {selectedPrediction.lng.toFixed(5)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedPrediction(null)}
+                      className="p-1 rounded-lg hover:bg-accent transition-all active:animate-clay-bounce"
+                    >
+                      <X className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                  </div>
 
-      {/* Evacuation Route Button */}
-      <div className="absolute bottom-4 right-4 z-[1000]">
-        <Button
-          onClick={() => navigate('/evacuation')}
-          className="h-12 rounded-xl clay-primary gap-2 font-semibold transition-all duration-300 hover:-translate-y-1 active:animate-clay-bounce"
-        >
-          <Navigation className="h-4 w-4" />
-          Evacuate
-        </Button>
-      </div>
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="clay-inset p-2.5 text-center">
+                      <p
+                        className="text-xl font-bold"
+                        style={{ color: accentColor }}
+                      >
+                        {occIcon}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Prediction
+                      </p>
+                    </div>
+                    <div className="clay-inset p-2.5 text-center">
+                      <p className="text-base font-bold text-foreground">
+                        {isTyphoon
+                          ? `${selectedPrediction.sensor_data.wind_speed_ms} m/s`
+                          : selectedPrediction.confidence !== null
+                            ? `${(selectedPrediction.confidence * 100).toFixed(1)}%`
+                            : "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {isTyphoon ? "Wind Speed" : "Confidence"}
+                      </p>
+                    </div>
+                    <div className="clay-inset p-2.5 text-center">
+                      <p className="text-base font-bold text-foreground capitalize">
+                        {selectedPrediction.risk_level}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Risk Level
+                      </p>
+                    </div>
+                  </div>
 
-      {/* ── Flood Prediction Result Sheet ── */}
-      {selectedPrediction && !selectedCluster && (() => {
-        const isFlood = selectedPrediction.type === 'flood';
-        const occurred = selectedPrediction.disaster_occurred === 1;
-        const accentColor = occurred ? (isFlood ? '#eab308' : '#f97316') : '#22c55e';
-        const occLabel = occurred
-          ? (isFlood ? '🌊 Flood Likely' : '⛰️ Landslide Likely')
-          : '✅ No Risk';
-        const occIcon = occurred ? (isFlood ? '🌊' : '⛰️') : '✅';
-        const sensorRows: [string, string][] = isFlood ? [
-          ['🌧 Rainfall', `${selectedPrediction.sensor_data.rainfall_mm} mm`],
-          ['🌡 Temperature', `${selectedPrediction.sensor_data.temperature_c}°C`],
-          ['💧 Humidity', `${selectedPrediction.sensor_data.humidity_pct}%`],
-          ['🏞 Water Level', `${selectedPrediction.sensor_data.water_level_m} m`],
-          ['⛰ Elevation', `${selectedPrediction.sensor_data.elevation_m} m`],
-          ['🌱 Land Cover', `${selectedPrediction.sensor_data.land_cover}`],
-        ] : [
-          ['🌡 Temperature', `${selectedPrediction.sensor_data.temperature_c}°C`],
-          ['💧 Humidity', `${selectedPrediction.sensor_data.humidity_pct}%`],
-          ['🌧 Precipitation', `${selectedPrediction.sensor_data.precipitation_mm} mm`],
-          ['🪨 Soil Moisture', `${selectedPrediction.sensor_data.soil_moisture_pct}%`],
-          ['⛰ Elevation', `${selectedPrediction.sensor_data.elevation_m} m`],
-        ];
-        return (
+                  {/* Sensor data */}
+                  <div className="clay-inset p-3 space-y-1.5">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      {isTyphoon
+                        ? "Live Weather Data (OpenWeatherMap)"
+                        : "Sensor Data (Auto-generated)"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      {sensorRows.map(([label, val]) => (
+                        <div
+                          key={label}
+                          className="flex justify-between text-[11px]"
+                        >
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className="text-foreground font-medium">
+                            {val}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        {/* ── Cluster Bottom Sheet ── */}
+        {selectedCluster && !selectedPrediction && (
           <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
-            <div className="clay-lg backdrop-blur-md bg-card/90 rounded-b-none p-4 space-y-3">
-              {/* Header */}
+            <div className="clay-lg backdrop-blur-md bg-card/85 rounded-b-none p-4 space-y-3">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full animate-pulse-emergency" style={{ background: accentColor }} />
-                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: accentColor }}>
-                      {selectedPrediction.risk_level} RISK
+                    <div
+                      className="h-3 w-3 rounded-full animate-pulse-emergency"
+                      style={{
+                        background: zoneColors[selectedCluster.severity],
+                      }}
+                    />
+                    <span
+                      className="text-xs font-medium uppercase tracking-wider"
+                      style={{ color: zoneColors[selectedCluster.severity] }}
+                    >
+                      {zoneLabels[selectedCluster.severity]}
                     </span>
-                    <span className="text-xs text-muted-foreground">— {occLabel}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mt-1">{selectedPrediction.nearest_area}</h3>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    📍 {selectedPrediction.lat.toFixed(5)}, {selectedPrediction.lng.toFixed(5)}
+                  <h3 className="text-lg font-bold text-foreground mt-1">
+                    {selectedCluster.areaName}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCluster.country}
                   </p>
                 </div>
                 <button
-                  onClick={() => setSelectedPrediction(null)}
+                  onClick={() => setSelectedCluster(null)}
                   className="p-1 rounded-lg hover:bg-accent transition-all active:animate-clay-bounce"
                 >
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="clay-inset p-2.5 text-center">
-                  <p className="text-xl font-bold" style={{ color: accentColor }}>{occIcon}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Prediction</p>
-                </div>
-                <div className="clay-inset p-2.5 text-center">
-                  <p className="text-base font-bold text-foreground">
-                    {selectedPrediction.confidence !== null
-                      ? `${(selectedPrediction.confidence * 100).toFixed(1)}%`
-                      : '—'}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Confidence</p>
-                </div>
-                <div className="clay-inset p-2.5 text-center">
-                  <p className="text-base font-bold text-foreground capitalize">{selectedPrediction.risk_level}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Risk Level</p>
-                </div>
-              </div>
-
-              {/* Sensor data */}
-              <div className="clay-inset p-3 space-y-1.5">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Sensor Data (Auto-generated)</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  {sensorRows.map(([label, val]) => (
-                    <div key={label} className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">{label}</span>
-                      <span className="text-foreground font-medium">{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Cluster Bottom Sheet ── */}
-      {selectedCluster && !selectedPrediction && (
-        <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
-          <div className="clay-lg backdrop-blur-md bg-card/85 rounded-b-none p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full animate-pulse-emergency" style={{ background: zoneColors[selectedCluster.severity] }} />
-                  <span className="text-xs font-medium uppercase tracking-wider" style={{ color: zoneColors[selectedCluster.severity] }}>
-                    {zoneLabels[selectedCluster.severity]}
+              <div className="flex gap-3">
+                <div className="flex-1 clay-inset p-3 text-center">
+                  <span className="text-2xl">
+                    {selectedCluster.disasterType === "flood"
+                      ? "🌊"
+                      : selectedCluster.disasterType === "typhoon"
+                        ? "🌀"
+                        : "⛰️"}
                   </span>
+                  <p className="text-sm font-medium text-foreground capitalize">
+                    {selectedCluster.disasterType}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Disaster Type
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-foreground mt-1">{selectedCluster.areaName}</h3>
-                <p className="text-xs text-muted-foreground">{selectedCluster.country}</p>
               </div>
-              <button onClick={() => setSelectedCluster(null)} className="p-1 rounded-lg hover:bg-accent transition-all active:animate-clay-bounce">
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
 
-            <div className="flex gap-3">
-              <div className="flex-1 clay-inset p-3 text-center">
-                <span className="text-2xl">{selectedCluster.disasterType === 'flood' ? '🌊' : selectedCluster.disasterType === 'typhoon' ? '🌀' : '⛰️'}</span>
-                <p className="text-sm font-medium text-foreground capitalize">{selectedCluster.disasterType}</p>
-                <p className="text-[10px] text-muted-foreground">Disaster Type</p>
+              <div className="clay-inset h-32 flex items-center justify-center">
+                <p className="text-xs text-muted-foreground">
+                  📸 Drone Snapshot — {selectedCluster.areaName}
+                </p>
               </div>
-            </div>
 
-            <div className="clay-inset h-32 flex items-center justify-center">
-              <p className="text-xs text-muted-foreground">📸 Drone Snapshot — {selectedCluster.areaName}</p>
-            </div>
+              <p className="text-xs text-muted-foreground font-mono">
+                📍 {selectedCluster.position[0].toFixed(4)},{" "}
+                {selectedCluster.position[1].toFixed(4)}
+              </p>
 
-            <p className="text-xs text-muted-foreground font-mono">
-              📍 {selectedCluster.position[0].toFixed(4)}, {selectedCluster.position[1].toFixed(4)}
-            </p>
-
-            <div className="flex items-center justify-between clay-sm p-3">
-              <div>
-                <p className="text-xs text-muted-foreground">{selectedCluster.sarContact.team}</p>
-                <p className="text-sm font-medium text-foreground">{selectedCluster.sarContact.name}</p>
+              <div className="flex items-center justify-between clay-sm p-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCluster.sarContact.team}
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {selectedCluster.sarContact.name}
+                  </p>
+                </div>
+                <a
+                  href={`tel:${selectedCluster.sarContact.phone}`}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground clay-primary transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce"
+                >
+                  <Phone className="h-4 w-4" />
+                </a>
               </div>
-              <a href={`tel:${selectedCluster.sarContact.phone}`}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground clay-primary transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce">
-                <Phone className="h-4 w-4" />
-              </a>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}{" "}
+      </div>
     </div>
   );
 };
@@ -662,11 +854,18 @@ const MapPage = () => {
 // Helper to get ISO country code for Nominatim
 function getCountryCode(country: string): string {
   const codes: Record<string, string> = {
-    'Indonesia': 'id', 'Philippines': 'ph', 'Thailand': 'th', 'Malaysia': 'my',
-    'Vietnam': 'vn', 'Myanmar': 'mm', 'Cambodia': 'kh', 'Laos': 'la',
-    'Singapore': 'sg', 'Brunei': 'bn',
+    Indonesia: "id",
+    Philippines: "ph",
+    Thailand: "th",
+    Malaysia: "my",
+    Vietnam: "vn",
+    Myanmar: "mm",
+    Cambodia: "kh",
+    Laos: "la",
+    Singapore: "sg",
+    Brunei: "bn",
   };
-  return codes[country] || 'id';
+  return codes[country] || "id";
 }
 
 export default MapPage;
