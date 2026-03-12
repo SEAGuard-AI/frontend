@@ -33,8 +33,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const SetupGuard = ({ children }: { children: React.ReactNode }) => {
+	const { user } = useAuth();
 	const { preferences } = usePreferences();
-	if (!preferences.setupComplete) return <Navigate to="/setup" replace />;
+	// Guests skip the setup requirement
+	if (!user?.isGuest && !preferences.setupComplete) return <Navigate to="/setup" replace />;
 	return <>{children}</>;
 };
 

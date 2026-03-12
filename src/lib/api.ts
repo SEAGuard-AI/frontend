@@ -122,16 +122,86 @@ export const dashboardApi = {
     apiFetch('/guides/survival') as Promise<SurvivalTipItem[]>,
 };
 
+export interface AlertItem {
+  id: string;
+  level: number;
+  title: string;
+  disasterType: string;
+  area: string;
+  country: string;
+  time: string;
+  action: string;
+  read: boolean;
+}
+
+export type ZoneLevel = 'evacuation' | 'caution' | 'danger';
+
 export interface DisasterZoneItem {
   id: string;
   centerLat: number;
   centerLng: number;
   radius: number;
-  level: string;
+  level: ZoneLevel;
   disasterType: string;
   name: string;
   country: string;
   description: string;
+}
+
+export interface EmergencyContactItem {
+  id: string;
+  name: string;
+  category: string;
+  phone: string;
+  distance: string;
+  status: string;
+  country: string;
+  city: string;
+  lat: number;
+  lng: number;
+}
+
+export const profileApi = {
+  getAlerts: (country?: string) =>
+    apiFetch(country ? `/alerts?country=${encodeURIComponent(country)}` : '/alerts') as Promise<AlertItem[]>,
+  getZones: (country?: string) =>
+    apiFetch(country ? `/disasters/zones?country=${encodeURIComponent(country)}` : '/disasters/zones') as Promise<DisasterZoneItem[]>,
+  getContacts: (country?: string) =>
+    apiFetch(country ? `/contacts?country=${encodeURIComponent(country)}` : '/contacts') as Promise<EmergencyContactItem[]>,
+};
+
+export interface BackendPreferences {
+  id: string;
+  userId: string;
+  country: string;
+  language: string;
+  locationLat: number | null;
+  locationLng: number | null;
+  locationLabel: string | null;
+  theme: string;
+  setupComplete: boolean;
+}
+
+export interface UpsertPreferencesPayload {
+  country?: string;
+  language?: string;
+  locationLat?: number;
+  locationLng?: number;
+  locationLabel?: string;
+  theme?: string;
+  setupComplete?: boolean;
+}
+
+export const preferencesApi = {
+  get: () =>
+    apiFetch('/preferences') as Promise<BackendPreferences>,
+  upsert: (data: UpsertPreferencesPayload) =>
+    apiFetch('/preferences', { method: 'PUT', body: JSON.stringify(data) }) as Promise<BackendPreferences>,
+};
+
+export interface ReportTimelineItem {
+  time: string;
+  event: string;
 }
 
 export interface DisasterReportItem {
@@ -143,11 +213,6 @@ export interface DisasterReportItem {
   affectedPopulation: number;
   title: string;
   summary: string;
-}
-
-export interface ReportTimelineItem {
-  time: string;
-  event: string;
 }
 
 export interface DisasterReportDetailItem extends DisasterReportItem {
