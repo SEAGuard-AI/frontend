@@ -17,6 +17,12 @@ import {
   Search,
   Droplets,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Calendar,
+  Waves,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -83,10 +89,27 @@ interface PredictionPin {
   loadingMarker: google.maps.Marker | null;
 }
 
+interface UserReport {
+  id: string;
+  userId: string;
+  userName: string | null;
+  disasterType: string;
+  description: string | null;
+  waterLevel: string | null;
+  isReceded: boolean;
+  lat: number;
+  lng: number;
+  imageUrls: string[];
+  country: string | null;
+  status: string;
+  createdAt: string;
+}
+
 const MapPage = () => {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [selectedCluster, setSelectedCluster] =
     useState<PopulationCluster | null>(null);
 
@@ -103,6 +126,12 @@ const MapPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // ── User Reports ──────────────────────────────────────────────────────────
+  const [userReportsList, setUserReportsList] = useState<UserReport[]>([]);
+  const [selectedReport, setSelectedReport] = useState<UserReport | null>(null);
+  const [reportImageIndex, setReportImageIndex] = useState(0);
+  const reportMarkersRef = useRef<google.maps.Marker[]>([]);
 
   // ── Predict Mode ─────────────────────────────────────────────────────────
   const [detectMode, setDetectMode] = useState(false);
@@ -122,56 +151,124 @@ const MapPage = () => {
     filterTypeRef.current = filterType;
   }, [filterType]);
 
-  // Initialize map
+  // Fetch user reports
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/user-reports`)
+      .then((r) => r.json())
+      .then((data) => setUserReportsList(data))
+      .catch(() => {});
+  }, []);
+
+  // Place / refresh report markers whenever map is ready or reports change
+  useEffect(() => {
+    if (!mapInstance.current || !mapReady) return;
+    const map = mapInstance.current;
+
+    // Remove existing report markers
+    reportMarkersRef.current.forEach((m) => m.setMap(null));
+    reportMarkersRef.current = [];
+
+    const pinColor = (type: string) => {
+      if (type === "flood") return { fill: "#3b82f6", stroke: "#1d4ed8" };
+      if (type === "landslide") return { fill: "#f97316", stroke: "#c2410c" };
+      if (type === "typhoon") return { fill: "#a855f7", stroke: "#7e22ce" };
+      return { fill: "#6b7280", stroke: "#374151" };
+    };
+
+    userReportsList.forEach((report) => {
+      const { fill, stroke } = pinColor(report.disasterType);
+      // Custom SVG drop-pin
+      const svgIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+          <path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 24 16 24S32 26.5 32 16C32 7.163 24.837 0 16 0z"
+            fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+          <circle cx="16" cy="15" r="7" fill="white" opacity="0.9"/>
+          <text x="16" y="19" text-anchor="middle" font-size="10" font-family="sans-serif">
+            ${report.disasterType === "flood" ? "🌊" : report.disasterType === "landslide" ? "⛰" : "🌀"}
+          </text>
+        </svg>`;
+
+      const marker = new google.maps.Marker({
+        position: { lat: report.lat, lng: report.lng },
+        map,
+        title: report.disasterType,
+        icon: {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgIcon)}`,
+          scaledSize: new google.maps.Size(32, 40),
+          anchor: new google.maps.Point(16, 40),
+        },
+        zIndex: 500,
+      });
+
+      marker.addListener("click", () => {
+        setSelectedReport(report);
+        setReportImageIndex(0);
+        setSelectedPrediction(null);
+        setSelectedCluster(null);
+      });
+
+      reportMarkersRef.current.push(marker);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userReportsList, mapReady]);
+
+  // Initialize map — get user location first so map opens directly there
   useEffect(() => {
     if (!isLoaded || !mapDivRef.current || mapInstance.current) return;
 
-    const defaultCenter = countryDefaultCenters[selectedCountry] || [
+    const fallbackCenter = countryDefaultCenters[selectedCountry] || [
       -6.2, 106.845,
     ];
 
-    const map = new google.maps.Map(mapDivRef.current, {
-      center: { lat: defaultCenter[0], lng: defaultCenter[1] },
-      zoom: 13,
-      disableDefaultUI: true,
-      zoomControl: true,
-      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
-      styles: preferences.theme === "dark" ? darkMapStyles : [],
-    });
+    const initMap = (center: { lat: number; lng: number }, zoom: number) => {
+      if (!mapDivRef.current) return;
+      const map = new google.maps.Map(mapDivRef.current, {
+        center,
+        zoom,
+        disableDefaultUI: true,
+        zoomControl: true,
+        zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
+        styles: preferences.theme === "dark" ? darkMapStyles : [],
+      });
 
-    mapInstance.current = map;
+      mapInstance.current = map;
+      setMapReady(true);
 
-    // Auto-center to user's current location
+      // Blue dot for user location
+      if (zoom === 15) {
+        userMarkerRef.current = new google.maps.Marker({
+          position: center,
+          map,
+          title: "Your Location",
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: "#4285F4",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2.5,
+          },
+          zIndex: 999,
+        });
+      }
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const userPos = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
-          map.setCenter(userPos);
-          map.setZoom(15);
-
-          // User location marker (blue dot)
-          userMarkerRef.current = new google.maps.Marker({
-            position: userPos,
-            map,
-            title: "Your Location",
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 9,
-              fillColor: "#4285F4",
-              fillOpacity: 1,
-              strokeColor: "#ffffff",
-              strokeWeight: 2.5,
-            },
-            zIndex: 999,
-          });
+          initMap({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 15);
         },
         () => {
-          // Geolocation denied / unavailable — keep default country center
+          // Permission denied or unavailable — fall back to country center
+          initMap(
+            { lat: fallbackCenter[0], lng: fallbackCenter[1] },
+            13,
+          );
         },
+        { timeout: 5000 },
       );
+    } else {
+      initMap({ lat: fallbackCenter[0], lng: fallbackCenter[1] }, 13);
     }
 
     return () => {
@@ -813,6 +910,153 @@ const MapPage = () => {
               </div>
             );
           })()}
+
+        {/* ── User Report Modal ── */}
+        {selectedReport && (
+          <div className="absolute inset-0 z-[2000] flex items-end justify-center sm:items-center">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setSelectedReport(null)}
+            />
+
+            <div className="relative w-full max-w-md mx-auto clay-lg bg-card/95 backdrop-blur-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-in slide-in-from-bottom">
+              {/* Header */}
+              <div className="flex items-start justify-between p-4 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">
+                    {selectedReport.disasterType === "flood"
+                      ? "🌊"
+                      : selectedReport.disasterType === "landslide"
+                        ? "⛰️"
+                        : "🌀"}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-foreground capitalize">
+                      {selectedReport.disasterType} Report
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {selectedReport.isReceded && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-500/20 text-blue-400">
+                          Receded
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedReport(null)}
+                  className="p-1 rounded-lg hover:bg-accent transition-all"
+                >
+                  <X className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Image Gallery */}
+              {selectedReport.imageUrls.length > 0 ? (
+                <div className="relative mx-4 mb-3 rounded-xl overflow-hidden bg-muted aspect-video">
+                  <img
+                    src={selectedReport.imageUrls[reportImageIndex]}
+                    alt={`Report image ${reportImageIndex + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedReport.imageUrls.length > 1 && (
+                    <>
+                      <button
+                        onClick={() =>
+                          setReportImageIndex((i) =>
+                            (i - 1 + selectedReport.imageUrls.length) %
+                            selectedReport.imageUrls.length,
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setReportImageIndex(
+                            (i) => (i + 1) % selectedReport.imageUrls.length,
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                        {selectedReport.imageUrls.map((_, i) => (
+                          <div
+                            key={i}
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full transition-colors",
+                              i === reportImageIndex
+                                ? "bg-white"
+                                : "bg-white/40",
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="mx-4 mb-3 rounded-xl aspect-video bg-muted flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">No images</p>
+                </div>
+              )}
+
+              {/* Info rows */}
+              <div className="px-4 pb-4 space-y-2">
+                {selectedReport.description && (
+                  <div className="clay-inset p-3 rounded-xl">
+                    <p className="text-xs text-muted-foreground mb-1 font-medium flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Description
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {selectedReport.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedReport.waterLevel && (
+                    <div className="clay-inset p-2.5 rounded-xl">
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                        <Waves className="h-3 w-3" /> Water Level
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {selectedReport.waterLevel}
+                      </p>
+                    </div>
+                  )}
+                  <div className="clay-inset p-2.5 rounded-xl">
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                      <MapPin className="h-3 w-3" /> Coordinates
+                    </p>
+                    <p className="text-[11px] font-mono text-foreground">
+                      {selectedReport.lat.toFixed(4)},{" "}
+                      {selectedReport.lng.toFixed(4)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                  <span className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {selectedReport.userName ?? "Unknown"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(selectedReport.createdAt).toLocaleDateString(
+                      "en-GB",
+                      { day: "numeric", month: "short", year: "numeric" },
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Cluster Bottom Sheet */}
         {selectedCluster && !selectedPrediction && (
