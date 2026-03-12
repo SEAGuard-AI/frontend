@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useJsApiLoader } from "@react-google-maps/api";
 import {
-  disasterZones,
   aseanCountries,
   countryDefaultCenters,
   type PopulationCluster,
@@ -26,6 +24,31 @@ import { useNavigate } from "react-router-dom";
 import { usePreferences } from "@/contexts/UserPreferencesContext";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:3000";
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
+
+const darkMapStyles: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#212121" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
+  { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
+  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#181818" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { featureType: "poi.park", elementType: "labels.text.stroke", stylers: [{ color: "#1b1b1b" }] },
+  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#373737" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
+  { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#4e4e4e" }] },
+  { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3d3d3d" }] },
+];
 
 const zoneColors: Record<ZoneLevel, string> = {
   evacuation: "#22c55e",
@@ -56,13 +79,14 @@ interface PredictionPin {
   lat: number;
   lng: number;
   result: Prediction | null;
-  circle: L.Circle | null;
-  loadingMarker: L.Marker | null;
+  circle: google.maps.Circle | null;
+  loadingMarker: google.maps.Marker | null;
 }
 
 const MapPage = () => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
+  const mapDivRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const [selectedCluster, setSelectedCluster] =
     useState<PopulationCluster | null>(null);
 
@@ -85,37 +109,88 @@ const MapPage = () => {
   const [selectedPrediction, setSelectedPrediction] =
     useState<Prediction | null>(null);
   const pinsRef = useRef<PredictionPin[]>([]);
-  const clickHandlerRef = useRef<((e: L.LeafletMouseEvent) => void) | null>(
-    null,
-  );
+  const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const filterTypeRef = useRef<DisasterType>(filterType);
 
-  // Loading marker HTML
-  const makeLoadingIcon = () =>
-    L.divIcon({
-      className: "",
-      html: `<div style="
-      width:32px;height:32px;border-radius:50%;
-      background:rgba(100,100,100,0.6);
-      border:2px solid rgba(255,255,255,0.6);
-      display:flex;align-items:center;justify-content:center;
-      animation:spin 1s linear infinite;
-      box-shadow:0 2px 8px rgba(0,0,0,0.4);
-    ">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-      </svg>
-    </div>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-    });
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
 
-  // Keep filterTypeRef in sync so the click callback always reads fresh value
+  // Keep filterTypeRef in sync
   useEffect(() => {
     filterTypeRef.current = filterType;
   }, [filterType]);
 
-  // Handle map click for prediction
+  // Initialize map
+  useEffect(() => {
+    if (!isLoaded || !mapDivRef.current || mapInstance.current) return;
+
+    const defaultCenter = countryDefaultCenters[selectedCountry] || [
+      -6.2, 106.845,
+    ];
+
+    const map = new google.maps.Map(mapDivRef.current, {
+      center: { lat: defaultCenter[0], lng: defaultCenter[1] },
+      zoom: 13,
+      disableDefaultUI: true,
+      zoomControl: true,
+      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
+      styles: preferences.theme === "dark" ? darkMapStyles : [],
+    });
+
+    mapInstance.current = map;
+
+    // Auto-center to user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userPos = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          };
+          map.setCenter(userPos);
+          map.setZoom(15);
+
+          // User location marker (blue dot)
+          userMarkerRef.current = new google.maps.Marker({
+            position: userPos,
+            map,
+            title: "Your Location",
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 9,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2.5,
+            },
+            zIndex: 999,
+          });
+        },
+        () => {
+          // Geolocation denied / unavailable — keep default country center
+        },
+      );
+    }
+
+    return () => {
+      mapInstance.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
+
+  // Pan to selected country
+  useEffect(() => {
+    if (!mapInstance.current) return;
+    const center = countryDefaultCenters[selectedCountry];
+    if (center) {
+      mapInstance.current.panTo({ lat: center[0], lng: center[1] });
+      mapInstance.current.setZoom(13);
+    }
+  }, [selectedCountry]);
+
+  // Handle prediction
   const runPrediction = useCallback(async (lat: number, lng: number) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -124,7 +199,7 @@ const MapPage = () => {
     const isFloodMode = disasterType === "flood";
     const isLandslideMode = disasterType === "landslide";
     const isTyphoonMode = disasterType === "typhoon";
-    if (!isFloodMode && !isLandslideMode && !isTyphoonMode) return; // only flood, landslide & typhoon supported
+    if (!isFloodMode && !isLandslideMode && !isTyphoonMode) return;
 
     const endpoint = isFloodMode
       ? `${BACKEND_URL}/api/flood/predict`
@@ -133,9 +208,22 @@ const MapPage = () => {
         : `${BACKEND_URL}/api/typhoon/predict`;
 
     const pinId = `${Date.now()}`;
-    const loadingMarker = L.marker([lat, lng], {
-      icon: makeLoadingIcon(),
-    }).addTo(map);
+
+    // Loading marker
+    const loadingMarker = new google.maps.Marker({
+      position: { lat, lng },
+      map,
+      animation: google.maps.Animation.BOUNCE,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#6b7280",
+        fillOpacity: 0.8,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+    });
+
     const pin: PredictionPin = {
       id: pinId,
       lat,
@@ -168,10 +256,10 @@ const MapPage = () => {
             : raw.typhoon_occurred,
         type: disasterType as "flood" | "landslide" | "typhoon",
       };
-      loadingMarker.remove();
+
+      loadingMarker.setMap(null);
 
       const isDisaster = data.disaster_occurred === 1;
-      // flood: yellow — landslide: orange — typhoon: blue — safe: green
       const circleColor = isDisaster
         ? isFloodMode
           ? "#eab308"
@@ -180,14 +268,17 @@ const MapPage = () => {
             : "#f97316"
         : "#22c55e";
 
-      const circle = L.circle([lat, lng], {
+      const circle = new google.maps.Circle({
+        center: { lat, lng },
         radius: 700,
+        map,
         fillColor: circleColor,
         fillOpacity: 0.35,
-        color: circleColor,
-        weight: 2.5,
-        opacity: 0.85,
-      }).addTo(map);
+        strokeColor: circleColor,
+        strokeWeight: 2.5,
+        strokeOpacity: 0.85,
+        clickable: true,
+      });
 
       let opacity = 0.35;
       let dir = -1;
@@ -195,136 +286,102 @@ const MapPage = () => {
         opacity += dir * 0.04;
         if (opacity <= 0.15) dir = 1;
         if (opacity >= 0.4) dir = -1;
-        circle.setStyle({ fillOpacity: opacity });
+        circle.setOptions({ fillOpacity: opacity });
       }, 80);
 
-      circle.on("click", () => setSelectedPrediction(data));
+      circle.addListener("click", () => setSelectedPrediction(data));
       (circle as any)._pulseInterval = pulseInterval;
 
       pin.result = data;
       pin.circle = circle;
       pin.loadingMarker = null;
 
-      // Fade out + remove main circle after 5 s
+      // Fade out + remove after 5s
       setTimeout(() => {
         clearInterval(pulseInterval);
         let fadeOpacity = 0.35;
         const fadeInterval = setInterval(() => {
           fadeOpacity = Math.max(0, fadeOpacity - 0.05);
-          circle.setStyle({ fillOpacity: fadeOpacity, opacity: fadeOpacity });
+          circle.setOptions({
+            fillOpacity: fadeOpacity,
+            strokeOpacity: fadeOpacity,
+          });
           if (fadeOpacity <= 0) {
             clearInterval(fadeInterval);
-            circle.remove();
+            circle.setMap(null);
           }
         }, 40);
       }, 5000);
 
       setSelectedPrediction(data);
-    } catch (err) {
-      loadingMarker.remove();
-      const errorCircle = L.circle([lat, lng], {
+    } catch {
+      loadingMarker.setMap(null);
+
+      const errorCircle = new google.maps.Circle({
+        center: { lat, lng },
         radius: 700,
+        map,
         fillColor: "#6b7280",
         fillOpacity: 0.25,
-        color: "#6b7280",
-        weight: 2,
-        opacity: 0.6,
-      })
-        .addTo(map)
-        .bindTooltip("⚠️ Not Available", { direction: "top", permanent: true });
+        strokeColor: "#6b7280",
+        strokeWeight: 2,
+        strokeOpacity: 0.6,
+        clickable: false,
+      });
 
-      // Fade out + remove error circle after 5 s
+      // Tooltip via InfoWindow
+      const infoWindow = new google.maps.InfoWindow({
+        content: "⚠️ Not Available",
+        position: { lat, lng },
+      });
+      infoWindow.open(map);
+
       setTimeout(() => {
         let fadeOpacity = 0.25;
         const fadeInterval = setInterval(() => {
           fadeOpacity = Math.max(0, fadeOpacity - 0.05);
-          errorCircle.setStyle({
+          errorCircle.setOptions({
             fillOpacity: fadeOpacity,
-            opacity: fadeOpacity,
+            strokeOpacity: fadeOpacity,
           });
           if (fadeOpacity <= 0) {
             clearInterval(fadeInterval);
-            errorCircle.remove();
+            errorCircle.setMap(null);
+            infoWindow.close();
           }
         }, 40);
       }, 5000);
     }
   }, []);
 
-  const handleMapClick = useCallback(
-    (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      runPrediction(lat, lng);
-    },
-    [runPrediction],
-  );
-
-  // Register / unregister click handler on mode toggle
+  // Register / unregister click handler on detect mode toggle
   useEffect(() => {
     const map = mapInstance.current;
     if (!map) return;
 
     if (detectMode) {
-      clickHandlerRef.current = handleMapClick;
-      map.on("click", handleMapClick);
-      map.getContainer().style.cursor = "crosshair";
+      clickListenerRef.current = map.addListener(
+        "click",
+        (e: google.maps.MapMouseEvent) => {
+          if (e.latLng) runPrediction(e.latLng.lat(), e.latLng.lng());
+        },
+      );
+      map.setOptions({ draggableCursor: "crosshair" });
     } else {
-      if (clickHandlerRef.current) {
-        map.off("click", clickHandlerRef.current);
-        clickHandlerRef.current = null;
+      if (clickListenerRef.current) {
+        google.maps.event.removeListener(clickListenerRef.current);
+        clickListenerRef.current = null;
       }
-      map.getContainer().style.cursor = "";
+      map.setOptions({ draggableCursor: "" });
     }
 
     return () => {
-      if (clickHandlerRef.current) {
-        map.off("click", clickHandlerRef.current);
-        clickHandlerRef.current = null;
+      if (clickListenerRef.current) {
+        google.maps.event.removeListener(clickListenerRef.current);
+        clickListenerRef.current = null;
       }
-      map.getContainer().style.cursor = "";
     };
-  }, [detectMode, handleMapClick]);
-
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-    const center = countryDefaultCenters[selectedCountry] || [-6.2, 106.845];
-    const map = L.map(mapRef.current, {
-      center,
-      zoom: 13,
-      zoomControl: false,
-      attributionControl: false,
-    });
-    L.control.zoom({ position: "topright" }).addTo(map);
-    const tileUrl =
-      preferences.theme === "dark"
-        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-    L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
-    mapInstance.current = map;
-    return () => {
-      map.remove();
-      mapInstance.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    const center = countryDefaultCenters[selectedCountry];
-    if (center) mapInstance.current.setView(center, 13, { animate: true });
-  }, [selectedCountry]);
-
-  // Draw zones and markers
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    const map = mapInstance.current;
-    map.eachLayer((l) => {
-      if (!(l instanceof L.TileLayer)) {
-        // Don't remove flood prediction circles/markers
-        if ((l as any)._isFloodPrediction) return;
-        map.removeLayer(l);
-      }
-    });
-  }, [selectedCountry, filterType]);
+  }, [detectMode, runPrediction]);
 
   // Location search using Nominatim
   const handleSearch = (query: string) => {
@@ -354,7 +411,8 @@ const MapPage = () => {
     const lat = parseFloat(result.lat);
     const lon = parseFloat(result.lon);
     if (mapInstance.current) {
-      mapInstance.current.setView([lat, lon], 15, { animate: true });
+      mapInstance.current.panTo({ lat, lng: lon });
+      mapInstance.current.setZoom(15);
     }
     setShowSearch(false);
     setSearchQuery("");
@@ -366,11 +424,16 @@ const MapPage = () => {
 
   return (
     <div className="h-full w-full p-3">
-      {/* CSS for loading spinner */}
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-
       <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
-        <div ref={mapRef} className="h-full w-full" />
+        {/* Google Map container */}
+        {!isLoaded ? (
+          <div className="h-full w-full flex items-center justify-center bg-muted">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div ref={mapDivRef} className="h-full w-full" />
+        )}
+
         {/* Search Bar */}
         <div className="absolute top-4 left-4 right-4 z-[1000] space-y-1">
           <div className="flex items-center gap-2">
@@ -421,7 +484,7 @@ const MapPage = () => {
               />
             </div>
 
-            {/* Flood Detect Mode Toggle */}
+            {/* Detect Mode Toggle */}
             <button
               onClick={() => {
                 setDetectMode((v) => !v);
@@ -497,6 +560,7 @@ const MapPage = () => {
             </div>
           )}
         </div>
+
         {/* Filter Panel */}
         {showFilters && (
           <div className="absolute top-16 right-4 z-[1000] clay backdrop-blur-md bg-card/80 p-3 space-y-2 w-44 animate-scale-in">
@@ -528,6 +592,7 @@ const MapPage = () => {
             ))}
           </div>
         )}
+
         {/* Zone Legend */}
         <div className="absolute bottom-4 left-4 z-[1000] clay-sm backdrop-blur-md bg-card/70 p-3">
           <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
@@ -545,7 +610,6 @@ const MapPage = () => {
                   <span className="text-[11px] text-foreground">{label}</span>
                 </div>
               ))}
-            {/* Detect Mode legend rows */}
             {detectMode && (
               <>
                 <div className="my-1 border-t border-border/30" />
@@ -584,6 +648,7 @@ const MapPage = () => {
             )}
           </div>
         </div>
+
         {/* Evacuation Route Button */}
         <div className="absolute bottom-4 right-4 z-[1000]">
           <Button
@@ -594,7 +659,8 @@ const MapPage = () => {
             Evacuate
           </Button>
         </div>
-        {/* ── Prediction Result Sheet (Flood / Landslide / Typhoon) ── */}
+
+        {/* Prediction Result Sheet */}
         {selectedPrediction &&
           !selectedCluster &&
           (() => {
@@ -654,7 +720,6 @@ const MapPage = () => {
             return (
               <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
                 <div className="clay-lg backdrop-blur-md bg-card/90 rounded-b-none p-4 space-y-3">
-                  {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -690,7 +755,6 @@ const MapPage = () => {
                     </button>
                   </div>
 
-                  {/* Stats */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="clay-inset p-2.5 text-center">
                       <p
@@ -725,7 +789,6 @@ const MapPage = () => {
                     </div>
                   </div>
 
-                  {/* Sensor data */}
                   <div className="clay-inset p-3 space-y-1.5">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                       {isTyphoon
@@ -750,7 +813,8 @@ const MapPage = () => {
               </div>
             );
           })()}
-        {/* ── Cluster Bottom Sheet ── */}
+
+        {/* Cluster Bottom Sheet */}
         {selectedCluster && !selectedPrediction && (
           <div className="absolute bottom-0 left-0 right-0 z-[1000] animate-in slide-in-from-bottom">
             <div className="clay-lg backdrop-blur-md bg-card/85 rounded-b-none p-4 space-y-3">
@@ -832,13 +896,12 @@ const MapPage = () => {
               </div>
             </div>
           </div>
-        )}{" "}
+        )}
       </div>
     </div>
   );
 };
 
-// Helper to get ISO country code for Nominatim
 function getCountryCode(country: string): string {
   const codes: Record<string, string> = {
     Indonesia: "id",
