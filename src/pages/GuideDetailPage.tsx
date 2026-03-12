@@ -53,9 +53,9 @@ const GuideDetailPage = () => {
   const images = stepImages[guide.id] || [];
 
   return (
-    <div className="h-full overflow-y-auto bg-background pb-8">
+    <div className="h-full overflow-y-auto px-4 pb-6">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border sticky top-0 z-10">
+      <div className="flex items-center gap-3 px-4 bg-card mt-4 rounded-xl pt-4 pb-3 border-b ">
         <button onClick={() => navigate(-1)} className="p-1 rounded-lg hover:bg-accent">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
