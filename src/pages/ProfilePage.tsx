@@ -10,7 +10,7 @@ import {
   countryDefaultCenters, aseanLanguages
 } from '@/data/mockData';
 import {
-  User, LogOut, Bell, MapPin, Navigation, Phone, Share2, Globe, Shield, Sun, Moon
+  User, LogOut, Bell, MapPin, Navigation, Phone, Share2, Globe, Shield, Sun, Moon, Copy, Check, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
@@ -36,6 +36,8 @@ const ProfilePage = () => {
   const navigate = useNavigate();
 
   const [gpsStatus, setGpsStatus] = useState<'loading' | 'success' | 'denied'>('loading');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -168,13 +170,18 @@ const ProfilePage = () => {
     };
   }, [center[0], center[1], nearbyZones.length, preferences.theme, mapZoom]);
 
+  const shareLink = `https://www.google.com/maps?q=${center[0]},${center[1]}`;
+
   const shareLocation = () => {
-    const text = `📍 ${t('your_location')}: ${locationLabel}\nhttps://www.google.com/maps?q=${center[0]},${center[1]}`;
-    if (navigator.share) {
-      navigator.share({ title: 'My Location — SeaGUARD', text }).catch(() => { });
-    } else {
-      navigator.clipboard.writeText(text);
-    }
+    setShowShareModal(true);
+    setCopied(false);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   return (
@@ -359,6 +366,71 @@ const ProfilePage = () => {
           {t('sign_out')}
         </Button>
       </div>
+
+      {/* Share Location Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowShareModal(false)}
+          />
+
+          <div className="relative w-full max-w-sm mx-4 bg-card rounded-t-2xl sm:rounded-2xl shadow-clay-lg p-5 space-y-4 animate-in slide-in-from-bottom">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-bold text-foreground">Share My Location</span>
+              </div>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="p-1 rounded-lg hover:bg-accent transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Location info */}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Current location</p>
+              <p className="text-sm text-foreground line-clamp-2">{locationLabel}</p>
+            </div>
+
+            {/* Link box */}
+            <div className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2.5">
+              <p className="flex-1 text-xs text-foreground font-mono truncate">{shareLink}</p>
+              <button
+                onClick={copyLink}
+                className="shrink-0 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Open in Google Maps */}
+            <a
+              href={shareLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <MapPin className="h-4 w-4" />
+              Open in Google Maps
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
