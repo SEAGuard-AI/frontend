@@ -8,39 +8,39 @@ import { usePreferences } from "@/contexts/UserPreferencesContext";
 const features = [
 	{
 		icon: Bell,
-		title: "Real-time Alerts",
+		title: "AI Risk Monitoring",
 		description:
-			"Instant push notifications for earthquakes, tsunamis, floods, and other natural disasters across ASEAN nations.",
+			"Real-time alerts and data-driven risk forecasts for floods, landslides, and typhoons across ASEAN powered by AI analysis.",
 	},
 	{
 		icon: MapPin,
-		title: "Evacuation Routes",
+		title: "AR-Guided Navigation",
 		description:
-			"AI-powered safe route planning with live traffic data and shelter mapping for rapid emergency evacuation.",
+			"Immersive AR navigation paths that guide you to safety and the nearest evacuation shelters in real-time.",
 	},
 	{
 		icon: Shield,
-		title: "Risk Assessment",
+		title: "AI Safety Reports",
 		description:
-			"Country-level risk forecasts with historical data analysis and predictive modeling for disaster preparedness.",
+			"Snap a photo and let our AI automatically detect hazard levels and water depth for accurate community-driven reporting.",
 	},
 	{
 		icon: Radio,
-		title: "Emergency Contacts",
+		title: "AR Disaster Simulator",
 		description:
-			"One-tap access to local emergency services, embassies, and relief organizations in every ASEAN country.",
+			"Safe AR environments and AI-powered voice guidance to visualize disaster scenarios and train for effective survival.",
 	},
 	{
-		icon: BookOpen,
-		title: "Survival Guides",
+		icon: Shield,
+		title: "Smart Safe Zones",
 		description:
-			"Step-by-step disaster response guides with offline access — from earthquake safety to flood survival.",
+			"Automatically detects and suggests the closest safe zones, hospitals, and assembly points for rapid emergency response.",
 	},
 	{
 		icon: Users,
-		title: "Community Network",
+		title: "Multilingual Support",
 		description:
-			"Connect with nearby users, share real-time conditions, and coordinate mutual aid during emergencies.",
+			"Fully localized in all ASEAN languages to ensure every community has access to critical, life-saving information.",
 	},
 ];
 
@@ -58,11 +58,11 @@ const LandingPage = () => {
 					<Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
 						<img
 							src="/logo-1.png"
-							alt="SeaGUARD logo"
+							alt="SEAGuard logo"
 							className="h-10 w-10 rounded-xl object-cover shadow-clay"
 						/>
 						<span className="text-xl font-bold tracking-tight">
-							SeaGUARD
+							SEAGuard
 						</span>
 					</Link>
 
@@ -98,6 +98,15 @@ const LandingPage = () => {
 							</Link>
 							<Button
 								asChild
+								variant="outline"
+								className="h-10 rounded-xl border-primary text-primary hover:bg-primary/5 hidden md:flex"
+							>
+								<a href="https://drive.google.com/drive/folders/1mtSj_nQmXwJLVnQTn9R34xf5T2Km5tDt?usp=sharing" target="_blank" rel="noopener noreferrer">
+									Download App
+								</a>
+							</Button>
+							<Button
+								asChild
 								className="clay-btn clay-primary h-10 px-6 rounded-xl font-bold hidden sm:flex"
 							>
 								<Link to="/login">
@@ -123,11 +132,11 @@ const LandingPage = () => {
 					</div>
 
 					<h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-tight">
-						ASEAN Disaster{" "}
+						AI-Driven{" "}
 						<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-destructive drop-shadow-sm">
-							Response &
+							Intelligence
 						</span>{" "}
-						Recovery
+						for Regional Safety
 					</h1>
 
 					<p className="text-lg text-muted-foreground leading-relaxed">
@@ -160,6 +169,9 @@ const LandingPage = () => {
 								variant="outline"
 								className="clay h-14 px-8 rounded-2xl text-base font-bold bg-card w-full sm:w-auto text-foreground border-transparent hover:bg-accent/50 transition-colors"
 							>
+								<a href="https://drive.google.com/drive/folders/1mtSj_nQmXwJLVnQTn9R34xf5T2Km5tDt?usp=sharing" target="_blank" rel="noopener noreferrer">
+									Download App
+								</a>
 							</Button>
 						)}
 					</div>
@@ -240,7 +252,7 @@ const LandingPage = () => {
 						</span>
 					</h2>
 					<p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
-						See how SeaGUARD helps communities prepare, respond, and recover from natural disasters.
+						See how SEAGuard helps communities prepare, respond, and recover from natural disasters.
 					</p>
 				</div>
 
@@ -250,7 +262,7 @@ const LandingPage = () => {
 						<iframe
 							className="absolute inset-0 w-full h-full"
 							src=""
-							title="SeaGUARD Demo Video"
+							title="SEAGuard Demo Video"
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							allowFullScreen
 						/>
@@ -277,14 +289,23 @@ const LandingPage = () => {
 				</div>
 
 				<h2 className="text-3xl lg:text-5xl font-black tracking-tight text-center max-w-3xl mb-3 px-4">
-					One platform,{" "}
+					Integrated Safety{" "}
 					<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-destructive">
-						every device
+						Ecosystem
 					</span>
 				</h2>
-				<p className="text-muted-foreground text-lg text-center max-w-xl mb-12">
-					Access critical disaster information on desktop or mobile — anytime, anywhere across Southeast Asia.
+				<p className="text-muted-foreground text-lg text-center max-w-2xl mb-8">
+					Bridging the gap between awareness and action. Monitor risk from your desktop, and navigate to safety with our specialized mobile tools for AR and emergency reporting.
 				</p>
+
+				<Button
+					asChild
+					className="clay-btn clay-primary h-12 px-8 rounded-xl font-bold mb-12"
+				>
+					<a href="https://drive.google.com/drive/folders/1mtSj_nQmXwJLVnQTn9R34xf5T2Km5tDt?usp=sharing" target="_blank" rel="noopener noreferrer">
+						Download Mobile App
+					</a>
+				</Button>
 
 				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center px-4 sm:px-8 pb-16">
 					<img

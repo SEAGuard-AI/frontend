@@ -33,11 +33,11 @@ const AppLayout = () => {
           >
             <img
               src="/logo-1.png"
-              alt="SeaGUARD logo"
+              alt="SEAGuard logo"
               className="h-9 w-9 rounded-xl object-cover shadow-clay-sm"
             />
             <span className="text-base font-extrabold text-foreground tracking-tight">
-              SeaGUARD
+              SEAGuard
             </span>
           </button>
 
@@ -100,11 +100,11 @@ const AppLayout = () => {
             >
               <img
                 src="/logo-1.png"
-                alt="SeaGUARD logo"
+                alt="SEAGuard logo"
                 className="h-8 w-8 rounded-xl object-cover shadow-clay-sm"
               />
               <span className="text-sm font-extrabold text-foreground">
-                SeaGUARD
+                SEAGuard
               </span>
             </button>
             <button
