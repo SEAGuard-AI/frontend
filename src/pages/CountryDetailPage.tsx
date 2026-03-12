@@ -422,7 +422,7 @@ const CountryDetailPage = () => {
         </div>
       </div>
 
-      {/* Forecast */}
+      Forecast
       {status.prediction && (
         <div className="mx-4 mt-4 rounded-xl p-3 border border-border"
           style={{ background: `${zoneColors[status.alertLevel]}10` }}>
