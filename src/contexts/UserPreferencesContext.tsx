@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { preferencesApi } from '@/lib/api';
+import type { UpsertPreferencesPayload } from '@/lib/api';
 
 interface UserLocation {
   lat: number;
@@ -24,57 +26,72 @@ interface UserPreferencesContextType {
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
+const defaultPrefs: UserPreferences = {
+  country: '',
+  language: '',
+  setupComplete: false,
+  location: null,
+  theme: 'dark',
+};
+
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
 
 export const UserPreferencesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const storageKey = user ? `seaguard_preferences_${user.id}` : 'seaguard_preferences_guest';
+  const isGuest = !user || user.isGuest;
+  const storageKey = user ? `adrrs_preferences_${user.id}` : 'adrrs_preferences_guest';
 
   const [currentKey, setCurrentKey] = useState(storageKey);
   const [preferences, setPreferences] = useState<UserPreferences>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return {
-      country: '',
-      language: '',
-      setupComplete: false,
-      location: null,
-      theme: 'dark',
-    };
+    } catch { /* fallback */ }
+    return { ...defaultPrefs };
   });
 
-  // Synchronously load from local storage when the user (storageKey) changes
+  // Track whether we've loaded from the backend for this user
+  const loadedFromBackend = useRef(false);
+
+  // Synchronously reset preferences when user changes
   if (storageKey !== currentKey) {
     setCurrentKey(storageKey);
+    loadedFromBackend.current = false;
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         setPreferences(JSON.parse(saved));
       } else {
-        setPreferences({
-          country: '',
-          language: '',
-          setupComplete: false,
-          location: null,
-          theme: 'dark',
-        });
+        setPreferences({ ...defaultPrefs });
       }
     } catch {
-      setPreferences({
-        country: '',
-        language: '',
-        setupComplete: false,
-        location: null,
-        theme: 'dark',
-      });
+      setPreferences({ ...defaultPrefs });
     }
   }
 
-  // Save to local storage whenever preferences change
+  // Load preferences from backend when an authenticated user mounts
+  useEffect(() => {
+    if (isGuest || loadedFromBackend.current) return;
+    loadedFromBackend.current = true;
+
+    preferencesApi.get().then((backendPrefs) => {
+      const merged: UserPreferences = {
+        country: backendPrefs.country || '',
+        language: backendPrefs.language || '',
+        setupComplete: backendPrefs.setupComplete ?? false,
+        location: backendPrefs.locationLat != null && backendPrefs.locationLng != null
+          ? { lat: backendPrefs.locationLat, lng: backendPrefs.locationLng, label: backendPrefs.locationLabel || '' }
+          : null,
+        theme: (backendPrefs.theme === 'light' ? 'light' : 'dark'),
+      };
+      setPreferences(merged);
+      localStorage.setItem(storageKey, JSON.stringify(merged));
+    }).catch(() => {
+      // 404 = no preferences yet on the backend, that's fine
+    });
+  }, [isGuest, storageKey]);
+
+  // Save to localStorage whenever preferences change
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(preferences));
   }, [preferences, storageKey]);
@@ -89,11 +106,38 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
     }
   }, [preferences.theme]);
 
-  const setCountry = (country: string) => setPreferences(p => ({ ...p, country }));
-  const setLanguage = (language: string) => setPreferences(p => ({ ...p, language }));
-  const setLocation = (location: UserLocation) => setPreferences(p => ({ ...p, location }));
-  const completeSetup = () => setPreferences(p => ({ ...p, setupComplete: true }));
-  const setTheme = (theme: 'light' | 'dark') => setPreferences(p => ({ ...p, theme }));
+  // Helper to sync a partial update to the backend (fire-and-forget)
+  const syncToBackend = useCallback((partial: UpsertPreferencesPayload) => {
+    if (isGuest) return;
+    preferencesApi.upsert(partial).catch(() => {
+      // Silently fail — localStorage is the fallback
+    });
+  }, [isGuest]);
+
+  const setCountry = (country: string) => {
+    setPreferences(p => ({ ...p, country }));
+    syncToBackend({ country });
+  };
+
+  const setLanguage = (language: string) => {
+    setPreferences(p => ({ ...p, language }));
+    syncToBackend({ language });
+  };
+
+  const setLocation = (location: UserLocation) => {
+    setPreferences(p => ({ ...p, location }));
+    syncToBackend({ locationLat: location.lat, locationLng: location.lng, locationLabel: location.label });
+  };
+
+  const completeSetup = () => {
+    setPreferences(p => ({ ...p, setupComplete: true }));
+    syncToBackend({ setupComplete: true });
+  };
+
+  const setTheme = (theme: 'light' | 'dark') => {
+    setPreferences(p => ({ ...p, theme }));
+    syncToBackend({ theme });
+  };
 
   return (
     <UserPreferencesContext.Provider value={{ preferences, setCountry, setLanguage, setLocation, completeSetup, setTheme }}>

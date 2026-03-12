@@ -2,12 +2,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/UserPreferencesContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { profileApi } from '@/lib/api';
+import type { ZoneLevel } from '@/lib/api';
 import {
-  disasterZones, alerts, countryFlags, emergencyContacts,
-  countryDefaultCenters, aseanLanguages, type ZoneLevel
+  countryFlags,
+  countryDefaultCenters, aseanLanguages
 } from '@/data/mockData';
 import {
-  User, LogOut, Bell, MapPin, Navigation, Phone, Edit2, Share2, Globe, Shield, Sun, Moon
+  User, LogOut, Bell, MapPin, Navigation, Phone, Share2, Globe, Shield, Sun, Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
@@ -32,24 +35,66 @@ const ProfilePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [editingLocation, setEditingLocation] = useState(false);
-  const [locationSearch, setLocationSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+  const [gpsStatus, setGpsStatus] = useState<'loading' | 'success' | 'denied'>('loading');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
 
   const userCountry = preferences.country || 'Indonesia';
-  const userZone = disasterZones.find(z => z.level === 'caution' && z.country === userCountry)
-    || disasterZones.find(z => z.country === userCountry);
-  const unreadAlerts = alerts.filter(a => !a.read).length;
+
+  // Auto-detect GPS location on mount
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setGpsStatus('denied');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Reverse geocode to get a human-readable label
+        let label = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`
+          );
+          const data = await res.json();
+          if (data.display_name) {
+            label = data.display_name;
+          }
+        } catch { /* fallback to coordinates */ }
+        setLocation({ lat: latitude, lng: longitude, label });
+        setGpsStatus('success');
+      },
+      () => {
+        setGpsStatus('denied');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const { data: fetchedZones = [] } = useQuery({
+    queryKey: ['zones', userCountry],
+    queryFn: () => profileApi.getZones(userCountry),
+  });
+  const { data: fetchedAlerts = [] } = useQuery({
+    queryKey: ['alerts', userCountry],
+    queryFn: () => profileApi.getAlerts(userCountry),
+  });
+  const { data: fetchedContacts = [] } = useQuery({
+    queryKey: ['contacts', userCountry],
+    queryFn: () => profileApi.getContacts(userCountry),
+  });
+
+  const nearbyZones = fetchedZones;
+  const unreadAlerts = fetchedAlerts.filter(a => !a.read).length;
+  const userZone = nearbyZones.find(z => z.level === 'caution') || nearbyZones[0];
+  const nearbyContacts = fetchedContacts.slice(0, 2);
+
   const center: [number, number] = preferences.location
     ? [preferences.location.lat, preferences.location.lng]
-    : (userZone ? userZone.center : (countryDefaultCenters[userCountry] || [-6.2, 106.845]));
-  const nearbyZones = disasterZones.filter(z => z.country === userCountry);
-  const nearbyContacts = emergencyContacts.filter(c => c.country === userCountry).slice(0, 2);
+    : (countryDefaultCenters[userCountry] || [-6.2, 106.845]);
   const isInDanger = userZone && (userZone.level === 'caution' || userZone.level === 'danger');
-  const locationLabel = preferences.location?.label || userZone?.name || `${userCountry}`;
+  const locationLabel = preferences.location?.label || `${userCountry}`;
 
   const currentLangName = preferences.language || 'English';
   const availableLanguages = Object.entries(aseanLanguages).map(([country, lang]) => ({
@@ -59,6 +104,12 @@ const ProfilePage = () => {
   }));
 
   // Imperative Leaflet map
+  const hasUserLocation = !!preferences.location;
+  const mapZoom = hasUserLocation ? 13 : 10;
+
+  // Southeast Asia bounds to restrict map view
+  const seaBounds: L.LatLngBoundsExpression = [[-11.0, 92.0], [28.5, 141.0]];
+
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -70,13 +121,16 @@ const ProfilePage = () => {
 
     const map = L.map(mapRef.current, {
       center,
-      zoom: 13,
+      zoom: mapZoom,
       zoomControl: false,
       dragging: false,
       scrollWheelZoom: false,
       doubleClickZoom: false,
       touchZoom: false,
       attributionControl: false,
+      maxBounds: seaBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 4,
     });
 
     const tileUrl = preferences.theme === 'dark'
@@ -86,7 +140,7 @@ const ProfilePage = () => {
 
     // Add zone circles
     nearbyZones.forEach(zone => {
-      L.circle(zone.center, {
+      L.circle([zone.centerLat, zone.centerLng], {
         radius: zone.radius,
         color: zoneHex[zone.level],
         fillColor: zoneHex[zone.level],
@@ -112,21 +166,12 @@ const ProfilePage = () => {
         mapInstance.current = null;
       }
     };
-  }, [center[0], center[1], nearbyZones.length, preferences.theme]);
-
-  const searchLocation = async (query: string) => {
-    if (query.length < 3) return;
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
-      const data = await res.json();
-      setSearchResults(data);
-    } catch { setSearchResults([]); }
-  };
+  }, [center[0], center[1], nearbyZones.length, preferences.theme, mapZoom]);
 
   const shareLocation = () => {
     const text = `📍 ${t('your_location')}: ${locationLabel}\nhttps://www.google.com/maps?q=${center[0]},${center[1]}`;
     if (navigator.share) {
-      navigator.share({ title: 'My Location — SeaGUARD', text }).catch(() => {});
+      navigator.share({ title: 'My Location — SeaGUARD', text }).catch(() => { });
     } else {
       navigator.clipboard.writeText(text);
     }
@@ -151,48 +196,30 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Location Display */}
+        {/* GPS Location Display (read-only) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('your_location')}</span>
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => setEditingLocation(!editingLocation)} className="flex items-center gap-1 text-primary text-[10px] font-medium px-2 py-1 rounded-lg hover:bg-accent">
-                <Edit2 className="h-3 w-3" /> {t('edit_location')}
-              </button>
-              <button onClick={shareLocation} className="flex items-center gap-1 text-primary text-[10px] font-medium px-2 py-1 rounded-lg hover:bg-accent">
-                <Share2 className="h-3 w-3" /> {t('share_location')}
-              </button>
-            </div>
+            <button onClick={shareLocation} className="flex items-center gap-1 text-primary text-[10px] font-medium px-2 py-1 rounded-lg hover:bg-accent">
+              <Share2 className="h-3 w-3" /> {t('share_location')}
+            </button>
           </div>
-          <p className="text-sm text-foreground">{locationLabel}</p>
-          <p className="text-[10px] text-muted-foreground">{center[0].toFixed(4)}, {center[1].toFixed(4)}</p>
+          {gpsStatus === 'loading' && (
+            <p className="text-sm text-muted-foreground animate-pulse">Detecting your location…</p>
+          )}
+          {gpsStatus === 'denied' && !preferences.location && (
+            <p className="text-sm text-muted-foreground">Location access denied. Showing default for {userCountry}.</p>
+          )}
+          {(gpsStatus === 'success' || preferences.location) && (
+            <>
+              <p className="text-sm text-foreground">{locationLabel}</p>
+              <p className="text-[10px] text-muted-foreground">{center[0].toFixed(4)}, {center[1].toFixed(4)}</p>
+            </>
+          )}
         </div>
-
-        {/* Location Edit */}
-        {editingLocation && (
-          <div className="rounded-2xl bg-card shadow-clay-sm p-3 space-y-2">
-            <input
-              type="text"
-              placeholder={t('search_location')}
-              value={locationSearch}
-              onChange={e => { setLocationSearch(e.target.value); searchLocation(e.target.value); }}
-              className="w-full rounded-xl bg-muted shadow-clay-inset px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {searchResults.map((r, i) => (
-              <button key={i} onClick={() => {
-                setLocation({ lat: parseFloat(r.lat), lng: parseFloat(r.lon), label: r.display_name });
-                setEditingLocation(false);
-                setLocationSearch('');
-                setSearchResults([]);
-              }} className="w-full text-left text-xs text-foreground p-2 rounded-lg hover:bg-accent truncate">
-                {r.display_name}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Mini Map */}
         <div className="rounded-2xl overflow-hidden shadow-clay">
@@ -244,12 +271,12 @@ const ProfilePage = () => {
           </div>
           <div className="rounded-2xl bg-card shadow-clay-sm p-3 text-center">
             <MapPin className="h-5 w-5 mx-auto text-zone-caution mb-1" />
-            <p className="text-lg font-bold text-foreground">{disasterZones.filter(z => z.level !== 'evacuation').length}</p>
+            <p className="text-lg font-bold text-foreground">{nearbyZones.filter(z => z.level !== 'evacuation').length}</p>
             <p className="text-[10px] text-muted-foreground">{t('active_zones')}</p>
           </div>
           <div className="rounded-2xl bg-card shadow-clay-sm p-3 text-center">
             <Shield className="h-5 w-5 mx-auto text-zone-evacuation mb-1" />
-            <p className="text-lg font-bold text-foreground">{disasterZones.filter(z => z.level === 'evacuation').length}</p>
+            <p className="text-lg font-bold text-foreground">{nearbyZones.filter(z => z.level === 'evacuation').length}</p>
             <p className="text-[10px] text-muted-foreground">{t('shelters')}</p>
           </div>
         </div>
@@ -313,11 +340,10 @@ const ProfilePage = () => {
                 <button
                   key={lang.country}
                   onClick={() => setLanguage(lang.name)}
-                  className={`text-left rounded-xl px-3 py-2 text-xs transition-all ${
-                    currentLangName === lang.name
+                  className={`text-left rounded-xl px-3 py-2 text-xs transition-all ${currentLangName === lang.name
                       ? 'bg-primary/10 text-primary shadow-clay-sm font-bold'
                       : 'bg-muted text-foreground hover:shadow-clay-sm font-medium'
-                  }`}
+                    }`}
                 >
                   <span className="font-medium">{lang.nativeName}</span>
                   <span className="block text-[10px] text-muted-foreground">{countryFlags[lang.country]} {lang.country}</span>

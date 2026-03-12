@@ -112,7 +112,7 @@ const LoginPage = () => {
         {/* Guest Access */}
         <Button
           variant="outline"
-          onClick={guestLogin}
+          onClick={() => { guestLogin(); navigate('/dashboard'); }}
           className="w-full h-12 rounded-xl text-foreground shadow-clay-sm"
         >
           <User className="mr-2 h-4 w-4" />
