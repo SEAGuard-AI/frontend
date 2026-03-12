@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertTriangle, User, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,14 @@ const LoginPage = () => {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <img
-            src="/logo-1.png"
-            alt="SeaGUARD logo"
-            className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-clay"
-          />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SeaGUARD</h1>
+          <Link to="/" className="inline-flex flex-col items-center gap-3 transition-opacity hover:opacity-90">
+            <img
+              src="/logo-1.png"
+              alt="SeaGUARD logo"
+              className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-clay"
+            />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">SeaGUARD</h1>
+          </Link>
           <p className="text-sm text-muted-foreground">ASEAN Disaster Response & Recovery System</p>
         </div>
 

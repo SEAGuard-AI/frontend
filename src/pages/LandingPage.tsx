@@ -55,7 +55,7 @@ const LandingPage = () => {
 			{/* Navigation Bar */}
 			<nav className="fixed top-0 w-full z-50 p-4">
 				<div className="mx-auto max-w-7xl flex items-center justify-between clay px-6 py-4">
-					<div className="flex items-center gap-3">
+					<Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
 						<img
 							src="/logo-1.png"
 							alt="SeaGUARD logo"
@@ -64,7 +64,7 @@ const LandingPage = () => {
 						<span className="text-xl font-bold tracking-tight">
 							SeaGUARD
 						</span>
-					</div>
+					</Link>
 
 					{isAuthenticated ? (
 						<div className="flex items-center gap-3">

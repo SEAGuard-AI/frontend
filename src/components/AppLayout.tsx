@@ -26,7 +26,11 @@ const AppLayout = () => {
       {!hideBar && (
         <aside className="hidden lg:flex flex-col w-60 bg-card shadow-clay shrink-0 m-3 mr-0 rounded-2xl overflow-hidden">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 px-5 h-16 shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2.5 px-5 h-16 shrink-0 transition-opacity hover:opacity-90"
+          >
             <img
               src="/logo-1.png"
               alt="SeaGUARD logo"
@@ -35,7 +39,7 @@ const AppLayout = () => {
             <span className="text-base font-extrabold text-foreground tracking-tight">
               SeaGUARD
             </span>
-          </div>
+          </button>
 
           {/* Nav Links */}
           <nav className="flex-1 px-3 py-2 space-y-1.5">
@@ -89,7 +93,11 @@ const AppLayout = () => {
         {/* Mobile Top Bar */}
         {!hideBar && (
           <div className="flex lg:hidden items-center justify-between px-4 pt-[env(safe-area-inset-top)] py-2 bg-card shadow-clay-sm mx-3 mt-3 rounded-2xl shrink-0">
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 transition-opacity hover:opacity-90"
+            >
               <img
                 src="/logo-1.png"
                 alt="SeaGUARD logo"
@@ -98,7 +106,7 @@ const AppLayout = () => {
               <span className="text-sm font-extrabold text-foreground">
                 SeaGUARD
               </span>
-            </div>
+            </button>
             <button
               onClick={() => navigate("/alerts")}
               className={cn(
