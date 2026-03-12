@@ -109,15 +109,7 @@ const LoginPage = () => {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        {/* Guest Access */}
-        <Button
-          variant="outline"
-          onClick={guestLogin}
-          className="w-full h-12 rounded-xl text-foreground shadow-clay-sm"
-        >
-          <User className="mr-2 h-4 w-4" />
-          Continue as Guest
-        </Button>
+
 
         <p className="text-center text-xs text-muted-foreground">
           <button

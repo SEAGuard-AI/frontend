@@ -1,16 +1,40 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  countryFlags,
-  aseanCountries,
-} from '@/data/mockData';
 import { usePreferences } from '@/contexts/UserPreferencesContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { dashboardApi, type CountryStatusItem, type DisasterNewsItem } from '@/lib/api';
 import {
-  Globe, TrendingUp, Newspaper, BookOpen, ChevronRight,
+  Globe, Newspaper, BookOpen, ChevronRight,
   Activity, ExternalLink, AlertTriangle
 } from 'lucide-react';
+
+const ASEAN_COUNTRIES = [
+  'Indonesia',
+  'Philippines',
+  'Thailand',
+  'Malaysia',
+  'Vietnam',
+  'Myanmar',
+  'Cambodia',
+  'Laos',
+  'Singapore',
+  'Brunei',
+] as const;
+
+const ASEAN_COUNTRY_SET = new Set<string>(ASEAN_COUNTRIES);
+
+const countryFlags: Record<string, string> = {
+  Indonesia: '🇮🇩',
+  Philippines: '🇵🇭',
+  Thailand: '🇹🇭',
+  Malaysia: '🇲🇾',
+  Vietnam: '🇻🇳',
+  Myanmar: '🇲🇲',
+  Cambodia: '🇰🇭',
+  Laos: '🇱🇦',
+  Singapore: '🇸🇬',
+  Brunei: '🇧🇳',
+};
 
 const zoneColors: Record<string, string> = {
   evacuation: 'hsl(var(--zone-evacuation))',
@@ -68,9 +92,18 @@ const HomePage = () => {
     queryFn: () => dashboardApi.getSurvivalTips(),
   });
 
-  const sortedStatuses = [...countryStatuses].sort((a, b) => b.activeDisasters - a.activeDisasters);
-  const aseanCountrySet = new Set<string>(aseanCountries);
-  const aseanRegionalNews = globalNews.filter((news) => aseanCountrySet.has(news.country));
+  const aseanRegionalNews = globalNews.filter((news) => ASEAN_COUNTRY_SET.has(news.country));
+
+  const aseanStatusMap = new Map<string, CountryStatusItem>(
+    countryStatuses
+      .filter((status) => ASEAN_COUNTRY_SET.has(status.country))
+      .map((status) => [status.country, status]),
+  );
+  const forecastCards = ASEAN_COUNTRIES.map((country) => ({
+    country,
+    status: aseanStatusMap.get(country) ?? null,
+  }));
+  const hasForecastData = forecastCards.some((card) => card.status !== null);
 
   const getNewsImage = (news: DisasterNewsItem) => {
     const typeKey = news.disasterType as keyof typeof newsImages;
@@ -94,7 +127,6 @@ const HomePage = () => {
   };
 
   const getZoneColor = (level: string) => zoneColors[level] || 'hsl(var(--muted-foreground))';
-  const forecastStatuses = sortedStatuses.filter((s) => s.prediction).slice(0, 6);
 
   return (
     <div className="h-full overflow-y-auto pb-6">
@@ -175,11 +207,11 @@ const HomePage = () => {
       <section className="mt-6">
         <div className="flex items-center gap-2 mb-3 px-4">
           <Activity className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold text-foreground">{t('risk_forecast')}</h2>
+          <h2 className="text-sm font-bold text-foreground">{t('asean_status')}</h2>
         </div>
         {isCountryStatusesLoading && (
           <div className="flex gap-3 overflow-x-auto px-4 pb-2">
-            {[1, 2, 3].map((n) => (
+            {[1, 2, 3, 4, 5].map((n) => (
               <div key={n} className="shrink-0 w-36 h-36 clay-sm animate-pulse bg-card/70" />
             ))}
           </div>
@@ -187,92 +219,50 @@ const HomePage = () => {
         {isCountryStatusesError && !isCountryStatusesLoading && (
           <div className="px-4">
             <div className="w-full clay-sm p-4 text-xs text-muted-foreground">
-              Failed to load country risk forecast.
+              Failed to load ASEAN status.
             </div>
           </div>
         )}
-        {!isCountryStatusesLoading && !isCountryStatusesError && forecastStatuses.length === 0 && (
+        {!isCountryStatusesLoading && !isCountryStatusesError && !hasForecastData && (
           <div className="px-4">
             <div className="w-full clay-sm p-4 text-xs text-muted-foreground">
-              No risk forecast data available yet.
+              No ASEAN status data available yet.
             </div>
           </div>
         )}
-        {!isCountryStatusesLoading && !isCountryStatusesError && forecastStatuses.length > 0 && (
+        {!isCountryStatusesLoading && !isCountryStatusesError && (
           <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
-            {forecastStatuses.map((s, i) => (
+            {forecastCards.map(({ country, status }, i) => (
               <button
-                key={s.id || s.country}
-                onClick={() => navigate(`/country/${encodeURIComponent(s.country)}`)}
+                key={country}
+                onClick={() => navigate(`/country/${encodeURIComponent(country)}`)}
                 className="shrink-0 w-36 snap-start clay-sm p-3 relative overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
                 style={{
-                  background: `linear-gradient(135deg, ${getZoneColor(s.alertLevel)}15, hsl(var(--card)))`,
+                  background: `linear-gradient(135deg, ${getZoneColor(status?.alertLevel || 'caution')}15, hsl(var(--card)))`,
                   animationDelay: `${i * 60}ms`,
                 }}
               >
-                <div className="absolute top-0 right-0 h-12 w-12 rounded-bl-full opacity-20"
-                  style={{ background: getZoneColor(s.alertLevel) }} />
-                <span className="text-2xl">{countryFlags[s.country] || '🏳️'}</span>
-                <p className="text-xs font-bold text-foreground mt-1.5">{s.country}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: getZoneColor(s.alertLevel) }} />
-                  <span className="text-[10px] font-semibold" style={{ color: getZoneColor(s.alertLevel) }}>
-                    {getZoneLabel(s.alertLevel)}
-                  </span>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5 line-clamp-3 leading-relaxed">{s.prediction}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ASEAN Country Status Grid */}
-      <section className="px-4 mt-6">
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold text-foreground">{t('asean_status')}</h2>
-        </div>
-        {isCountryStatusesLoading && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="clay-sm h-24 animate-pulse bg-card/70" />
-            ))}
-          </div>
-        )}
-        {isCountryStatusesError && !isCountryStatusesLoading && (
-          <div className="w-full clay-sm p-4 text-xs text-muted-foreground">
-            Failed to load ASEAN country status.
-          </div>
-        )}
-        {!isCountryStatusesLoading && !isCountryStatusesError && sortedStatuses.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {sortedStatuses.map((status: CountryStatusItem, i) => (
-              <button
-                key={status.id || status.country}
-                onClick={() => navigate(`/country/${encodeURIComponent(status.country)}`)}
-                className="clay-sm p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay active:animate-clay-bounce animate-fade-in"
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{countryFlags[status.country] || '🏳️'}</span>
-                  <span className="text-xs font-medium text-foreground">{status.country}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 rounded-full" style={{ background: getZoneColor(status.alertLevel) }} />
-                  <span className="text-[10px] font-semibold" style={{ color: getZoneColor(status.alertLevel) }}>
-                    {getZoneLabel(status.alertLevel)}
-                  </span>
-                </div>
-                {status.activeDisasters > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {status.activeDisasters} {t('active_disasters').toLowerCase()} • {status.affectedPopulation.toLocaleString()} {t('people_affected').toLowerCase()}
+                <div
+                  className="absolute top-0 right-0 h-12 w-12 rounded-bl-full opacity-20"
+                  style={{ background: getZoneColor(status?.alertLevel || 'caution') }}
+                />
+                <span className="text-2xl">{countryFlags[country] || '🏳️'}</span>
+                <p className="text-xs font-bold text-foreground mt-1.5">{country}</p>
+                {status ? (
+                  <>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="h-1.5 w-1.5 rounded-full" style={{ background: getZoneColor(status.alertLevel) }} />
+                      <span className="text-[10px] font-semibold" style={{ color: getZoneColor(status.alertLevel) }}>
+                        {getZoneLabel(status.alertLevel)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 line-clamp-3 leading-relaxed">{status.prediction}</p>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+                    No live status from API yet.
                   </p>
                 )}
-                <div className="flex items-center gap-1 mt-1.5 text-primary">
-                  <span className="text-[10px] font-medium">{t('details')}</span>
-                  <ChevronRight className="h-3 w-3" />
-                </div>
               </button>
             ))}
           </div>

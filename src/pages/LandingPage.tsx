@@ -121,7 +121,6 @@ const LandingPage = () => {
 								variant="outline"
 								className="clay h-14 px-8 rounded-2xl text-base font-bold bg-card w-full sm:w-auto text-foreground border-transparent hover:bg-accent/50 transition-colors"
 							>
-								<Link to="/login">Continue as Guest</Link>
 							</Button>
 						)}
 					</div>
