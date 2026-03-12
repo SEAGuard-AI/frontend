@@ -4,6 +4,17 @@ import { useLocation } from "react-router-dom";
 import { usePreferences } from "@/contexts/UserPreferencesContext";
 import { cn } from "@/lib/utils";
 
+/** Reverse-geocode lat/lng to a human-readable string via Nominatim. */
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+  const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+  if (!res.ok) throw new Error("Nominatim error");
+  const data = await res.json();
+  const { city, town, village, state, country } = data.address ?? {};
+  const place = city ?? town ?? village ?? state ?? "";
+  return [place, country].filter(Boolean).join(", ");
+}
+
 const CHATBOT_URL =
   "https://seaguard-chatbot-865275048150.asia-southeast1.run.app/api/v1/chat";
 
@@ -19,6 +30,7 @@ const ChatbotWidget = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [geoLocation, setGeoLocation] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +47,25 @@ const ChatbotWidget = () => {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  // Resolve real device location once on mount
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const place = await reverseGeocode(coords.latitude, coords.longitude);
+          if (place) setGeoLocation(place);
+        } catch {
+          // fall back to account preference; handled below
+        }
+      },
+      () => {
+        // Permission denied – fall back to account preference
+      },
+      { timeout: 8000 },
+    );
+  }, []);
 
   const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
@@ -60,7 +91,7 @@ const ChatbotWidget = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userText,
-          location: preferences.country || undefined,
+          location: geoLocation ?? preferences.country ?? undefined,
           history,
         }),
       });
@@ -84,7 +115,7 @@ const ChatbotWidget = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, messages, preferences.country]);
+  }, [input, isLoading, messages, geoLocation, preferences.country]);
 
   // Only render on /dashboard
   if (location.pathname !== "/dashboard") return null;
@@ -225,25 +256,22 @@ const ChatbotWidget = () => {
         </div>
       )}
 
-      {/* ── Floating Button ──────────────────────────────────────────── */}
-      <button
-        onClick={() => setIsOpen((v) => !v)}
-        title="SEAGuard AI Assistant"
-        className={cn(
-          "fixed bottom-[5.5rem] right-4 lg:bottom-6 lg:right-6 z-[2000]",
-          "flex h-13 w-13 h-12 w-12 items-center justify-center rounded-full",
-          "bg-destructive text-white shadow-lg",
-          "hover:shadow-xl hover:-translate-y-0.5 active:scale-95",
-          "transition-all duration-200",
-          isOpen && "rotate-0",
-        )}
-      >
-        {isOpen ? (
-          <X className="h-5 w-5" />
-        ) : (
+      {/* ── Floating Button — only shown when chat is closed ────────── */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          title="SEAGuard AI Assistant"
+          className={cn(
+            "fixed bottom-[5.5rem] right-4 lg:bottom-6 lg:right-6 z-[2000]",
+            "flex h-12 w-12 items-center justify-center rounded-full",
+            "bg-destructive text-white shadow-lg",
+            "hover:shadow-xl hover:-translate-y-0.5 active:scale-95",
+            "transition-all duration-200",
+          )}
+        >
           <MessageCircle className="h-5 w-5" />
-        )}
-      </button>
+        </button>
+      )}
     </>
   );
 };
