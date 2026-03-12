@@ -290,19 +290,18 @@ const LandingPage = () => {
 					<img
 						src="/macbook.png"
 						alt="Dashboard on Macbook"
-						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-fade-in ml-auto"
+						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-float ml-auto"
 					/>
 					<img
 						src="/phone.png"
 						alt="Mobile app on Phone"
-						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[30%] sm:bottom-[40%] lg:bottom-[35%] w-[50%] md:w-[40%] lg:w-[35%] max-w-[280px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-20 animate-scale-in"
-						style={{ animationDelay: "0.15s" }}
+						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[30%] sm:bottom-[40%] lg:bottom-[35%] w-[50%] md:w-[40%] lg:w-[35%] max-w-[280px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-20 animate-float-reverse"
 					/>
 				</div>
 
 				{/* Trust badges */}
 				<div className="flex flex-wrap justify-center gap-6 mt-4">
-					{["10 ASEAN Nations", "Offline Ready", "Multi-language"].map((badge) => (
+					{["10 ASEAN Nations", "Multi-language"].map((badge) => (
 						<div key={badge} className="clay-sm rounded-full px-5 py-2 text-sm font-semibold text-muted-foreground">
 							{badge}
 						</div>
