@@ -14,7 +14,18 @@ import {
   type DisasterZoneItem,
   type ReportTimelineItem,
 } from '@/lib/api';
-import { ArrowLeft, AlertTriangle, Users, Activity, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  AlertTriangle,
+  Users,
+  Activity,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+  ChevronLeft,
+  ChevronRight,
+  Newspaper,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -39,16 +50,61 @@ const levelRank: Record<string, number> = {
 };
 
 const newsImages: Record<string, string> = {
-  flood: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?w=600&h=340&fit=crop',
-  landslide: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=340&fit=crop',
-  typhoon: 'https://images.unsplash.com/photo-1509803874385-db7c23652552?w=600&h=340&fit=crop',
-  earthquake: 'https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?w=600&h=340&fit=crop',
+  flood: 'https://images.unsplash.com/photo-1485617359743-4dc5d2e53c89?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  landslide: 'https://images.unsplash.com/photo-1611932846203-c4c9e2e825a8?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  typhoon: 'https://plus.unsplash.com/premium_photo-1733349608730-92c509594d76?q=80&w=1362&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  earthquake: 'https://images.unsplash.com/photo-1635068741358-ab1b9813623f?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+};
+const DISASTER_IMAGE_FALLBACK = '/placeholder.svg';
+
+const getDisasterImage = (disasterType: string) => {
+  const normalized = (disasterType || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, '_');
+
+  // Prefer direct DB/API disaster_type values: flood | landslide | earthquake | typhoon.
+  if (normalized in newsImages) return newsImages[normalized];
+
+  // Lightweight alias support for external source variants.
+  if (normalized === 'tropical_cyclone' || normalized === 'cyclone' || normalized === 'hurricane') {
+    return newsImages.typhoon;
+  }
+
+  return DISASTER_IMAGE_FALLBACK;
 };
 
+const ACTIVITY_PER_PAGE = 10;
+
 const CountryDetailPage = () => {
+  type ActivityItem =
+    | { kind: 'event'; id: string; title: string; level: string; date: string }
+    | {
+      kind: 'news';
+      id: string;
+      title: string;
+      source: string;
+      date: string;
+      disasterType: string;
+      sourceUrl: string | null;
+    }
+    | {
+      kind: 'report';
+      id: string;
+      title: string;
+      summary: string;
+      date: string;
+      source: string | null;
+      sourceUrl: string | null;
+      disasterType: string;
+      timeline: { time: string; event: string }[];
+    };
+
   const miniMapRef = useRef<HTMLDivElement>(null);
   const miniMapInstance = useRef<L.Map | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+  const [expandedReportTimelines, setExpandedReportTimelines] = useState<Record<string, boolean>>({});
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -121,7 +177,6 @@ const CountryDetailPage = () => {
           id: report.id,
           title: report.title,
           level: report.severity,
-          areaLabel: report.country,
           date: report.date,
         }))
         .sort((a, b) => (levelRank[b.level] || 0) - (levelRank[a.level] || 0));
@@ -131,10 +186,98 @@ const CountryDetailPage = () => {
       id: `status-${index}`,
       title: event,
       level: status?.alertLevel || 'caution',
-      areaLabel: country,
       date: '',
     }));
-  }, [countryReports, status, country]);
+  }, [countryReports, status]);
+
+  const activityItems = useMemo<ActivityItem[]>(() => {
+    const normalizeTitle = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+    const parseDate = (value: string) => {
+      if (!value) return null;
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? null : parsed;
+    };
+    const getIncidentKey = (id: string, expectedPrefix: string, title: string, date: string) => {
+      if (id.startsWith(expectedPrefix) && id.length > 1) return id.slice(1);
+      return `${normalizeTitle(title)}|${date || ''}`;
+    };
+
+    const rawNewsItems = countryNews.map((news: DisasterNewsItem) => ({
+      kind: 'news' as const,
+      id: news.id,
+      title: news.title,
+      source: news.source,
+      date: news.date,
+      disasterType: news.disasterType,
+      sourceUrl: news.sourceUrl,
+    }));
+
+    const newsByIncidentKey = new Map<string, typeof rawNewsItems[number]>();
+    rawNewsItems.forEach((news) => {
+      const key = getIncidentKey(news.id, 'n', news.title, news.date);
+      if (!newsByIncidentKey.has(key) || (!newsByIncidentKey.get(key)?.sourceUrl && news.sourceUrl)) {
+        newsByIncidentKey.set(key, news);
+      }
+    });
+
+    const consumedNewsKeys = new Set<string>();
+
+    const reportItems: ActivityItem[] = countryReports.map((report: DisasterReportItem | DisasterReportDetailItem) => {
+      const incidentKey = getIncidentKey(report.id, 'r', report.title, report.date);
+      const matchedNews = newsByIncidentKey.get(incidentKey) || null;
+      if (matchedNews) consumedNewsKeys.add(incidentKey);
+      return {
+        kind: 'report',
+        id: report.id,
+        title: report.title,
+        summary: report.summary,
+        date: report.date,
+        source: matchedNews?.source ?? null,
+        sourceUrl: matchedNews?.sourceUrl ?? null,
+        disasterType: matchedNews?.disasterType ?? report.disasterType,
+        timeline: ('timeline' in report ? report.timeline : []) || [],
+      };
+    });
+
+    const reportTitleSet = new Set(countryReports.map((report) => normalizeTitle(report.title)));
+
+    const eventItems: ActivityItem[] = recentDisasters
+      .filter((event) => !reportTitleSet.has(normalizeTitle(event.title)))
+      .map((event) => ({
+        kind: 'event',
+        id: event.id,
+        title: event.title,
+        level: event.level,
+        date: event.date || '',
+      }));
+
+    const newsItems: ActivityItem[] = Array.from(newsByIncidentKey.entries())
+      .filter(([incidentKey]) => !consumedNewsKeys.has(incidentKey))
+      .map(([, news]) => news);
+
+    return [...eventItems, ...newsItems, ...reportItems].sort((a, b) => {
+      const aDate = parseDate(a.date);
+      const bDate = parseDate(b.date);
+
+      if (aDate === null && bDate === null) return 0;
+      if (aDate === null) return 1;
+      if (bDate === null) return -1;
+      return bDate - aDate;
+    });
+  }, [countryReports, recentDisasters, countryNews]);
+
+  const activityTotalPages = Math.max(1, Math.ceil(activityItems.length / ACTIVITY_PER_PAGE));
+  const currentActivityPage = Math.min(activityPage, activityTotalPages);
+  const pagedActivityItems = useMemo(() => {
+    const start = (currentActivityPage - 1) * ACTIVITY_PER_PAGE;
+    return activityItems.slice(start, start + ACTIVITY_PER_PAGE);
+  }, [activityItems, currentActivityPage]);
+  const hasActivityDataError = (
+    isCountryNewsError
+    || isReportSummariesError
+    || isReportDetailsError
+    || isCountryZonesError
+  );
 
   const center = useMemo<[number, number]>(() => {
     if (countryZones.length > 0) {
@@ -217,6 +360,15 @@ const CountryDetailPage = () => {
     return () => window.removeEventListener('keydown', onEsc);
   }, [isMapExpanded]);
 
+  useEffect(() => {
+    setActivityPage(1);
+    setExpandedReportTimelines({});
+  }, [country]);
+
+  useEffect(() => {
+    setActivityPage((page) => Math.min(page, activityTotalPages));
+  }, [activityTotalPages]);
+
   if (isStatusLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-background p-4">
@@ -282,26 +434,6 @@ const CountryDetailPage = () => {
         </div>
       )}
 
-      {/* Recent Events */}
-      {recentDisasters.length > 0 && (
-        <section className="px-4 mt-5">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('recent_events')}</h2>
-          <div className="space-y-1.5">
-            {recentDisasters.map((event) => (
-              <div key={event.id} className="flex items-start gap-2 rounded-lg bg-card border border-border p-2.5">
-                <div className="h-2 w-2 rounded-full shrink-0 mt-1.5" style={{ background: zoneColors[event.level] || zoneColors.caution }} />
-                <div className="min-w-0">
-                  <span className="text-xs text-foreground block">{event.title}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {event.date ? `${event.areaLabel} • ${event.date}` : event.areaLabel}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Mini Map */}
       <section className="px-4 mt-5">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('disaster_map')}</h2>
@@ -350,73 +482,146 @@ const CountryDetailPage = () => {
         </div>
       </section>
 
-      {/* Related News */}
-      {countryNews.length > 0 && (
-        <section className="px-4 mt-5">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('related_news')}</h2>
-          <div className="space-y-2">
-            {countryNews.map((news: DisasterNewsItem) => (
-              <button
-                key={news.id}
-                onClick={() => news.sourceUrl ? window.open(news.sourceUrl, '_blank') : null}
-                className="w-full flex gap-3 rounded-xl bg-card border border-border p-2 text-left"
-              >
-                <img
-                  src={newsImages[news.disasterType] || newsImages.flood}
-                  alt={news.title}
-                  className="h-16 w-20 rounded-lg object-cover shrink-0"
-                />
-                <div className="flex-1 min-w-0 py-0.5">
-                  <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
-                  <p className="text-[10px] text-muted-foreground mt-1">{news.source} • {news.date}</p>
-                </div>
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {isCountryNewsError && (
-        <section className="px-4 mt-5">
-          <div className="rounded-xl border border-border p-3 bg-card text-xs text-muted-foreground">
-            Failed to load related news.
-          </div>
-        </section>
-      )}
-
-      {/* Reports */}
-      {countryReports.map((report: DisasterReportItem | DisasterReportDetailItem) => (
-        <section key={report.id} className="px-4 mt-5">
-          <div className="rounded-xl border border-border p-3 space-y-2 bg-card">
-            <h3 className="text-sm font-semibold text-foreground">{report.title}</h3>
-            <p className="text-xs text-muted-foreground">{report.summary}</p>
-            {'timeline' in report && report.timeline.length > 0 && (
-              <div className="space-y-1">
-                {report.timeline.map((te, i) => (
-                  <div key={i} className="flex gap-2 text-[11px]">
-                    <span className="text-muted-foreground font-mono shrink-0">{te.time}</span>
-                    <span className="text-foreground">{te.event}</span>
+      {/* Activity */}
+      <section className="px-4 mt-5">
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Activity</h2>
+        <div className="space-y-2">
+          {pagedActivityItems.map((item) => {
+            if (item.kind === 'event') {
+              return (
+                <div key={`${item.kind}-${item.id}`} className="rounded-lg bg-card border border-border p-2.5">
+                  <div className="flex items-start gap-2">
+                    <div className="h-2 w-2 rounded-full shrink-0 mt-1.5" style={{ background: zoneColors[item.level] || zoneColors.caution }} />
+                    <div className="min-w-0">
+                      <span className="text-xs text-foreground block">{item.title}</span>
+                      <span className="text-[10px] text-muted-foreground">{item.date || 'Date unavailable'}</span>
+                    </div>
                   </div>
-                ))}
+                </div>
+              );
+            }
+
+            if (item.kind === 'news') {
+              return (
+                <button
+                  type="button"
+                  key={`${item.kind}-${item.id}`}
+                  onClick={() => (item.sourceUrl ? window.open(item.sourceUrl, '_blank', 'noopener,noreferrer') : null)}
+                  disabled={!item.sourceUrl}
+                  className="w-full flex gap-3 rounded-lg bg-card border border-border p-2.5 text-left disabled:cursor-default"
+                >
+                  <img
+                    src={getDisasterImage(item.disasterType)}
+                    alt={item.title}
+                    className="h-16 w-20 rounded-md object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <h3 className="text-xs font-semibold text-foreground line-clamp-2">{item.title}</h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <Newspaper className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{item.source} • {item.date}</span>
+                    </p>
+                  </div>
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                </button>
+              );
+            }
+
+            const isTimelineExpanded = Boolean(expandedReportTimelines[item.id]);
+            return (
+              <div key={`${item.kind}-${item.id}`} className="rounded-lg bg-card border border-border p-2.5">
+                <div className="flex items-start gap-3">
+                  <img
+                    src={getDisasterImage(item.disasterType)}
+                    alt={item.title}
+                    className="h-16 w-20 rounded-md object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-semibold text-foreground">{item.title}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{item.summary}</p>
+                        {item.source ? (
+                          <p className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <Newspaper className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{item.source} • {item.date || 'Date unavailable'}</span>
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-[10px] text-muted-foreground">{item.date || 'Date unavailable'}</p>
+                        )}
+                      </div>
+                      {item.sourceUrl && (
+                        <button
+                          type="button"
+                          className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground"
+                          onClick={() => window.open(item.sourceUrl!, '_blank', 'noopener,noreferrer')}
+                          aria-label="Open source article"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    {item.timeline.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          className="mt-1 text-[11px] text-foreground hover:underline"
+                          onClick={() => setExpandedReportTimelines((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                        >
+                          {isTimelineExpanded ? 'Hide timeline' : 'Show timeline'}
+                        </button>
+                        {isTimelineExpanded && (
+                          <div className="mt-2 space-y-1">
+                            {item.timeline.map((timelineItem, index) => (
+                              <div key={`${item.id}-${timelineItem.time}-${index}`} className="flex gap-2 text-[11px]">
+                                <span className="text-muted-foreground font-mono shrink-0">{timelineItem.time}</span>
+                                <span className="text-foreground">{timelineItem.event}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
+            );
+          })}
+          {activityItems.length === 0 && (
+            <div className="rounded-lg bg-card border border-border p-2.5 text-xs text-muted-foreground">
+              No activity available yet.
+            </div>
+          )}
+        </div>
+
+        {activityTotalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <button
+              onClick={() => setActivityPage((page) => Math.max(1, page - 1))}
+              disabled={currentActivityPage === 1}
+              className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Prev
+            </button>
+            <span className="text-[11px] text-muted-foreground font-medium">
+              {currentActivityPage} / {activityTotalPages}
+            </span>
+            <button
+              onClick={() => setActivityPage((page) => Math.min(activityTotalPages, page + 1))}
+              disabled={currentActivityPage === activityTotalPages}
+              className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+            >
+              Next
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </section>
-      ))}
-      {(isReportSummariesError || isReportDetailsError) && (
-        <section className="px-4 mt-5">
-          <div className="rounded-xl border border-border p-3 bg-card text-xs text-muted-foreground">
-            Failed to load disaster reports.
-          </div>
-        </section>
-      )}
-      {isCountryZonesError && (
-        <section className="px-4 mt-5">
-          <div className="rounded-xl border border-border p-3 bg-card text-xs text-muted-foreground">
-            Failed to load disaster zones.
-          </div>
-        </section>
-      )}
+        )}
+
+        {hasActivityDataError && (
+          <p className="mt-3 text-xs text-muted-foreground">Some data failed to load.</p>
+        )}
+      </section>
     </div>
   );
 };

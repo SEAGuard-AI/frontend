@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { usePreferences } from '@/contexts/UserPreferencesContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { dashboardApi, type CountryStatusItem, type DisasterNewsItem } from '@/lib/api';
 import {
-  Globe, Newspaper, BookOpen, ChevronRight,
+  Globe, Newspaper, BookOpen, ChevronRight, ChevronLeft,
   Activity, ExternalLink, AlertTriangle
 } from 'lucide-react';
+
+const LOCAL_NEWS_PER_PAGE = 3;
+const GLOBAL_NEWS_PER_PAGE = 10;
 
 const ASEAN_COUNTRIES = [
   'Indonesia',
@@ -50,10 +54,50 @@ const newsImages: Record<string, string> = {
   global: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=340&fit=crop',
 };
 
+function PaginationControls({
+  page,
+  totalPages,
+  onPrev,
+  onNext,
+}: {
+  page: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-3 mt-3">
+      <button
+        onClick={onPrev}
+        disabled={page === 1}
+        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Prev
+      </button>
+      <span className="text-[11px] text-muted-foreground font-medium">
+        {page} / {totalPages}
+      </span>
+      <button
+        onClick={onNext}
+        disabled={page === totalPages}
+        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+      >
+        Next
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 const HomePage = () => {
   const { preferences } = usePreferences();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const [localNewsPage, setLocalNewsPage] = useState(1);
+  const [globalNewsPage, setGlobalNewsPage] = useState(1);
 
   const {
     data: localNews = [],
@@ -93,6 +137,18 @@ const HomePage = () => {
   });
 
   const aseanRegionalNews = globalNews.filter((news) => ASEAN_COUNTRY_SET.has(news.country));
+
+  // Local news pagination: 1 hero + (LOCAL_NEWS_PER_PAGE - 1) secondary cards per page
+  const localNewsTotalPages = Math.max(1, Math.ceil(localNews.length / LOCAL_NEWS_PER_PAGE));
+  const localNewsStart = (localNewsPage - 1) * LOCAL_NEWS_PER_PAGE;
+  const localNewsSlice = localNews.slice(localNewsStart, localNewsStart + LOCAL_NEWS_PER_PAGE);
+  const localHero = localNewsSlice[0] ?? null;
+  const localSecondary = localNewsSlice.slice(1);
+
+  // Global news pagination: GLOBAL_NEWS_PER_PAGE per page
+  const globalTotalPages = Math.max(1, Math.ceil(aseanRegionalNews.length / GLOBAL_NEWS_PER_PAGE));
+  const globalStart = (globalNewsPage - 1) * GLOBAL_NEWS_PER_PAGE;
+  const globalSlice = aseanRegionalNews.slice(globalStart, globalStart + GLOBAL_NEWS_PER_PAGE);
 
   const aseanStatusMap = new Map<string, CountryStatusItem>(
     countryStatuses
@@ -139,7 +195,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Hero Local News */}
+      {/* Hero Local News — 3 per page */}
       {(isLocalNewsLoading || isLocalNewsError || localNews.length > 0) && (
         <section className="px-4 mt-2">
           <div className="flex items-center gap-2 mb-3">
@@ -156,27 +212,27 @@ const HomePage = () => {
               Failed to load local updates.
             </div>
           )}
-          {!isLocalNewsLoading && !isLocalNewsError && localNews.length > 0 && (
+          {!isLocalNewsLoading && !isLocalNewsError && localNews.length > 0 && localHero && (
             <>
               <button
-                onClick={() => openNews(localNews[0])}
+                onClick={() => openNews(localHero)}
                 className="w-full clay-lg overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-clay-lg active:animate-clay-bounce"
               >
                 <div className="relative h-44 w-full">
-                  <img src={getNewsImage(localNews[0])} alt={localNews[0].title} className="h-full w-full object-cover" />
+                  <img src={getNewsImage(localHero)} alt={localHero.title} className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5 text-[10px] font-bold text-primary-foreground mb-1.5">
                       <AlertTriangle className="h-3 w-3" /> {t('breaking')}
                     </span>
-                    <h3 className="text-sm font-bold text-white line-clamp-2">{localNews[0].title}</h3>
-                    <p className="text-[11px] text-white/70 mt-0.5">{localNews[0].source} • {localNews[0].date}</p>
+                    <h3 className="text-sm font-bold text-white line-clamp-2">{localHero.title}</h3>
+                    <p className="text-[11px] text-white/70 mt-0.5">{localHero.source} • {localHero.date}</p>
                   </div>
                 </div>
               </button>
-              {localNews.length > 1 && (
+              {localSecondary.length > 0 && (
                 <div className="space-y-2 mt-2">
-                  {localNews.slice(1).map((news, i) => (
+                  {localSecondary.map((news, i) => (
                     <button
                       key={news.id}
                       onClick={() => openNews(news)}
@@ -193,6 +249,12 @@ const HomePage = () => {
                   ))}
                 </div>
               )}
+              <PaginationControls
+                page={localNewsPage}
+                totalPages={localNewsTotalPages}
+                onPrev={() => setLocalNewsPage((p) => Math.max(1, p - 1))}
+                onNext={() => setLocalNewsPage((p) => Math.min(localNewsTotalPages, p + 1))}
+              />
             </>
           )}
           {!isLocalNewsLoading && !isLocalNewsError && localNews.length === 0 && (
@@ -269,7 +331,7 @@ const HomePage = () => {
         )}
       </section>
 
-      {/* Global News */}
+      {/* Global News — 10 per page with country flags */}
       <section className="mt-6 mx-4 clay-lg p-4">
         <div className="flex items-center gap-2 mb-3">
           <Globe className="h-4 w-4 text-primary" />
@@ -288,29 +350,41 @@ const HomePage = () => {
           </div>
         )}
         {!isGlobalNewsLoading && !isGlobalNewsError && (
-          <div className="space-y-2">
-            {aseanRegionalNews.map((news, i) => (
-              <button
-                key={news.id}
-                onClick={() => openNews(news)}
-                className="w-full flex gap-3 rounded-xl bg-muted/50 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-accent active:animate-clay-bounce animate-fade-in"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-xl object-cover shrink-0" />
-                <div className="flex-1 min-w-0 py-0.5">
-                  <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
-                  <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{news.summary}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{news.source} • {news.date}</p>
+          <>
+            <div className="space-y-2">
+              {globalSlice.map((news, i) => (
+                <button
+                  key={news.id}
+                  onClick={() => openNews(news)}
+                  className="w-full flex gap-3 rounded-xl bg-muted/50 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-accent active:animate-clay-bounce animate-fade-in"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  <img src={getNewsImage(news)} alt={news.title} className="h-16 w-20 rounded-xl object-cover shrink-0" />
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-sm leading-none">{countryFlags[news.country] || '🏳️'}</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground">{news.country}</span>
+                    </div>
+                    <h3 className="text-xs font-semibold text-foreground line-clamp-2">{news.title}</h3>
+                    <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{news.summary}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{news.source} • {news.date}</p>
+                  </div>
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                </button>
+              ))}
+              {aseanRegionalNews.length === 0 && (
+                <div className="w-full rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
+                  No global alerts available yet.
                 </div>
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
-              </button>
-            ))}
-            {aseanRegionalNews.length === 0 && (
-              <div className="w-full rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
-                No global alerts available yet.
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+            <PaginationControls
+              page={globalNewsPage}
+              totalPages={globalTotalPages}
+              onPrev={() => setGlobalNewsPage((p) => Math.max(1, p - 1))}
+              onNext={() => setGlobalNewsPage((p) => Math.min(globalTotalPages, p + 1))}
+            />
+          </>
         )}
       </section>
 
