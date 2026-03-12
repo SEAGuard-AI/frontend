@@ -268,22 +268,50 @@ const LandingPage = () => {
 			</section>
 
 			{/* App Showcase Section */}
-			<section className="relative w-full max-w-7xl mx-auto px-6 py-10 lg:py-16 z-10 flex flex-col items-center">
-				<h2 className="text-2xl lg:text-5xl font-black tracking-tight text-center max-w-3xl mb-4 lg:mb-8 px-4">
-					A simple and trusted disaster response and recovery platform
-				</h2>
+			<section className="relative w-full max-w-7xl mx-auto px-6 py-16 lg:py-28 z-10 flex flex-col items-center overflow-hidden">
+				{/* Decorative glow behind devices */}
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[60%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
-				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center mt-12 px-4 sm:px-8 pb-16">
-					<img
-						src="/macbook.png"
-						alt="Dashboard on Macbook"
-						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-float ml-auto"
-					/>
-					<img
-						src="/phone.png"
-						alt="Mobile app on Phone"
-						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[35%] sm:bottom-[45%] lg:bottom-[40%] w-[55%] md:w-[45%] lg:w-[40%] max-w-[320px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 animate-float-reverse"
-					/>
+				<div className="inline-flex items-center gap-2 rounded-full clay-sm bg-accent/50 px-4 py-2 text-sm font-medium text-primary mb-6">
+					Available Everywhere
+				</div>
+
+				<h2 className="text-3xl lg:text-5xl font-black tracking-tight text-center max-w-3xl mb-3 px-4">
+					One platform,{" "}
+					<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-destructive">
+						every device
+					</span>
+				</h2>
+				<p className="text-muted-foreground text-lg text-center max-w-xl mb-12">
+					Access critical disaster information on desktop or mobile — anytime, anywhere across Southeast Asia.
+				</p>
+
+				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center px-4 sm:px-8 pb-16">
+					{/* Macbook with clay frame */}
+					<div className="relative w-full md:w-[75%] ml-auto z-10 animate-fade-in clay rounded-2xl p-2">
+						<img
+							src="/macbook.png"
+							alt="Dashboard on Macbook"
+							className="w-full object-contain rounded-xl"
+						/>
+					</div>
+					{/* Phone with clay frame */}
+					<div className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[30%] sm:bottom-[40%] lg:bottom-[35%] w-[50%] md:w-[40%] lg:w-[35%] max-w-[280px] z-20 animate-scale-in clay rounded-2xl p-1.5" style={{ animationDelay: "0.15s" }}>
+						<img
+							src="/phone.png"
+							alt="Mobile app on Phone"
+							className="w-full object-contain rounded-xl"
+						/>
+					</div>
+				</div>
+
+				{/* Trust badges */}
+				<div className="flex flex-wrap justify-center gap-6 mt-4">
+					{["10 ASEAN Nations", "Offline Ready", "Multi-language"].map((badge) => (
+						<div key={badge} className="clay-sm rounded-full px-5 py-2 text-sm font-semibold text-muted-foreground">
+							{badge}
+						</div>
+					))}
 				</div>
 			</section>
 
