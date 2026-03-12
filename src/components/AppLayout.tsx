@@ -1,22 +1,23 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Map, Phone, Bell, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { alerts } from '@/data/mockData';
-import { useTranslation } from '@/contexts/TranslationContext';
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Home, Map, Phone, Bell, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { alerts } from "@/data/mockData";
+import { useTranslation } from "@/contexts/TranslationContext";
+import ChatbotWidget from "@/components/ChatbotWidget";
 
 const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const unreadCount = alerts.filter(a => !a.read).length;
+  const unreadCount = alerts.filter((a) => !a.read).length;
 
-  const hideBar = location.pathname.includes('/ar');
+  const hideBar = location.pathname.includes("/ar");
 
   const navItems = [
-    { path: '/dashboard', icon: Home, label: t('home') },
-    { path: '/map', icon: Map, label: t('map') },
-    { path: '/contacts', icon: Phone, label: t('contacts') },
-    { path: '/profile', icon: User, label: t('profile') },
+    { path: "/dashboard", icon: Home, label: t("home") },
+    { path: "/map", icon: Map, label: t("map") },
+    { path: "/contacts", icon: Phone, label: t("contacts") },
+    { path: "/profile", icon: User, label: t("profile") },
   ];
 
   return (
@@ -26,8 +27,14 @@ const AppLayout = () => {
         <aside className="hidden lg:flex flex-col w-60 bg-card shadow-clay shrink-0 m-3 mr-0 rounded-2xl overflow-hidden">
           {/* Logo */}
           <div className="flex items-center gap-2.5 px-5 h-16 shrink-0">
-            <img src="/logo-1.png" alt="SeaGUARD logo" className="h-9 w-9 rounded-xl object-cover shadow-clay-sm" />
-            <span className="text-base font-extrabold text-foreground tracking-tight">SeaGUARD</span>
+            <img
+              src="/logo-1.png"
+              alt="SeaGUARD logo"
+              className="h-9 w-9 rounded-xl object-cover shadow-clay-sm"
+            />
+            <span className="text-base font-extrabold text-foreground tracking-tight">
+              SeaGUARD
+            </span>
           </div>
 
           {/* Nav Links */}
@@ -39,10 +46,10 @@ const AppLayout = () => {
                   key={path}
                   onClick={() => navigate(path)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all',
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
                     active
-                      ? 'bg-primary/10 text-primary shadow-clay-sm'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground hover:shadow-clay-sm'
+                      ? "bg-primary/10 text-primary shadow-clay-sm"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground hover:shadow-clay-sm",
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -55,12 +62,12 @@ const AppLayout = () => {
           {/* Sidebar Alerts Button */}
           <div className="px-3 pb-4">
             <button
-              onClick={() => navigate('/alerts')}
+              onClick={() => navigate("/alerts")}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all',
-                location.pathname === '/alerts'
-                  ? 'bg-primary/10 text-primary shadow-clay-sm'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground hover:shadow-clay-sm'
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all",
+                location.pathname === "/alerts"
+                  ? "bg-primary/10 text-primary shadow-clay-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground hover:shadow-clay-sm",
               )}
             >
               <div className="relative">
@@ -83,14 +90,22 @@ const AppLayout = () => {
         {!hideBar && (
           <div className="flex lg:hidden items-center justify-between px-4 pt-[env(safe-area-inset-top)] py-2 bg-card shadow-clay-sm mx-3 mt-3 rounded-2xl shrink-0">
             <div className="flex items-center gap-2">
-              <img src="/logo-1.png" alt="SeaGUARD logo" className="h-8 w-8 rounded-xl object-cover shadow-clay-sm" />
-              <span className="text-sm font-extrabold text-foreground">SeaGUARD</span>
+              <img
+                src="/logo-1.png"
+                alt="SeaGUARD logo"
+                className="h-8 w-8 rounded-xl object-cover shadow-clay-sm"
+              />
+              <span className="text-sm font-extrabold text-foreground">
+                SeaGUARD
+              </span>
             </div>
             <button
-              onClick={() => navigate('/alerts')}
+              onClick={() => navigate("/alerts")}
               className={cn(
-                'relative flex h-10 w-10 items-center justify-center rounded-xl transition-all',
-                location.pathname === '/alerts' ? 'text-primary bg-primary/10 shadow-clay-sm' : 'text-muted-foreground clay-sm hover:shadow-clay-sm'
+                "relative flex h-10 w-10 items-center justify-center rounded-xl transition-all",
+                location.pathname === "/alerts"
+                  ? "text-primary bg-primary/10 shadow-clay-sm"
+                  : "text-muted-foreground clay-sm hover:shadow-clay-sm",
               )}
             >
               <Bell className="h-5 w-5" />
@@ -107,10 +122,12 @@ const AppLayout = () => {
         {!hideBar && (
           <div className="hidden lg:flex items-center justify-end gap-3 px-6 h-16 m-3 mb-0 bg-card shadow-clay-sm rounded-2xl shrink-0">
             <button
-              onClick={() => navigate('/alerts')}
+              onClick={() => navigate("/alerts")}
               className={cn(
-                'relative flex h-10 w-10 items-center justify-center rounded-xl transition-all',
-                location.pathname === '/alerts' ? 'text-primary bg-primary/10 shadow-clay-sm' : 'text-muted-foreground hover:shadow-clay-sm hover:bg-accent'
+                "relative flex h-10 w-10 items-center justify-center rounded-xl transition-all",
+                location.pathname === "/alerts"
+                  ? "text-primary bg-primary/10 shadow-clay-sm"
+                  : "text-muted-foreground hover:shadow-clay-sm hover:bg-accent",
               )}
             >
               <Bell className="h-5 w-5" />
@@ -121,10 +138,12 @@ const AppLayout = () => {
               )}
             </button>
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate("/profile")}
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-xl bg-secondary transition-all shadow-clay-sm',
-                location.pathname === '/profile' ? 'ring-2 ring-primary' : 'hover:shadow-clay'
+                "flex h-10 w-10 items-center justify-center rounded-xl bg-secondary transition-all shadow-clay-sm",
+                location.pathname === "/profile"
+                  ? "ring-2 ring-primary"
+                  : "hover:shadow-clay",
               )}
             >
               <User className="h-4 w-4 text-muted-foreground" />
@@ -136,6 +155,8 @@ const AppLayout = () => {
           <Outlet />
         </main>
 
+        <ChatbotWidget />
+
         {/* Mobile Bottom Tab Bar */}
         {!hideBar && (
           <nav className="flex lg:hidden items-center justify-around bg-card shadow-clay mx-3 mb-3 rounded-2xl px-2 pb-[env(safe-area-inset-bottom)] h-16 shrink-0">
@@ -146,8 +167,10 @@ const AppLayout = () => {
                   key={path}
                   onClick={() => navigate(path)}
                   className={cn(
-                    'flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all',
-                    active ? 'text-primary bg-primary/10 shadow-clay-sm' : 'text-muted-foreground'
+                    "flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all",
+                    active
+                      ? "text-primary bg-primary/10 shadow-clay-sm"
+                      : "text-muted-foreground",
                   )}
                 >
                   <Icon className="h-5 w-5" />
