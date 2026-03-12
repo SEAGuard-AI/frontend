@@ -1,9 +1,48 @@
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, Shield, MapPin, Bell, Radio, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ModernMapHero from "@/components/ModernMapHero";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/UserPreferencesContext";
+
+const features = [
+	{
+		icon: Bell,
+		title: "Real-time Alerts",
+		description:
+			"Instant push notifications for earthquakes, tsunamis, floods, and other natural disasters across ASEAN nations.",
+	},
+	{
+		icon: MapPin,
+		title: "Evacuation Routes",
+		description:
+			"AI-powered safe route planning with live traffic data and shelter mapping for rapid emergency evacuation.",
+	},
+	{
+		icon: Shield,
+		title: "Risk Assessment",
+		description:
+			"Country-level risk forecasts with historical data analysis and predictive modeling for disaster preparedness.",
+	},
+	{
+		icon: Radio,
+		title: "Emergency Contacts",
+		description:
+			"One-tap access to local emergency services, embassies, and relief organizations in every ASEAN country.",
+	},
+	{
+		icon: BookOpen,
+		title: "Survival Guides",
+		description:
+			"Step-by-step disaster response guides with offline access — from earthquake safety to flood survival.",
+	},
+	{
+		icon: Users,
+		title: "Community Network",
+		description:
+			"Connect with nearby users, share real-time conditions, and coordinate mutual aid during emergencies.",
+	},
+];
 
 const LandingPage = () => {
 	const { isAuthenticated, user, logout } = useAuth();
@@ -141,40 +180,108 @@ const LandingPage = () => {
 					</div>
 				</div>
 
-				{/* Right Column - Map Component (Ordered First on Mobile) */}
+				{/* Right Column - Map Component */}
 				<div
 					className="flex-1 w-full max-w-xl lg:max-w-none relative animate-scale-in flex justify-center items-center z-10 order-first md:order-last"
 					style={{ animationDelay: "0.2s" }}
 				>
-					{/* Decorative glowing background blob */}
 					<div className="absolute inset-0 bg-primary/10 blur-[100px] rounded-full mix-blend-multiply opacity-50 dark:opacity-20 animate-pulse" />
-
 					<div className="relative w-full aspect-square max-w-[600px]">
 						<ModernMapHero />
 					</div>
 				</div>
 			</main>
 
+			{/* Features Section */}
+			<section className="relative w-full max-w-7xl mx-auto px-6 py-16 lg:py-24 z-10">
+				<div className="text-center mb-12 lg:mb-16">
+					<div className="inline-flex items-center gap-2 rounded-full clay-sm bg-accent/50 px-4 py-2 text-sm font-medium text-primary mb-6">
+						Platform Features
+					</div>
+					<h2 className="text-3xl lg:text-5xl font-black tracking-tight max-w-3xl mx-auto">
+						Everything you need for{" "}
+						<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-destructive">
+							disaster resilience
+						</span>
+					</h2>
+					<p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+						Built for ASEAN communities — from early warning to recovery coordination.
+					</p>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+					{features.map((feature) => (
+						<div
+							key={feature.title}
+							className="clay rounded-2xl p-6 flex flex-col gap-4 hover:scale-[1.02] transition-transform duration-200"
+						>
+							<div className="clay-sm h-12 w-12 rounded-xl flex items-center justify-center bg-primary/10">
+								<feature.icon className="h-6 w-6 text-primary" />
+							</div>
+							<h3 className="text-lg font-bold text-foreground">{feature.title}</h3>
+							<p className="text-sm text-muted-foreground leading-relaxed">
+								{feature.description}
+							</p>
+						</div>
+					))}
+				</div>
+			</section>
+
+			{/* Demo Video Section */}
+			<section className="relative w-full max-w-7xl mx-auto px-6 py-16 lg:py-24 z-10">
+				<div className="text-center mb-10">
+					<div className="inline-flex items-center gap-2 rounded-full clay-sm bg-accent/50 px-4 py-2 text-sm font-medium text-primary mb-6">
+						See It In Action
+					</div>
+					<h2 className="text-3xl lg:text-5xl font-black tracking-tight max-w-3xl mx-auto">
+						Watch the{" "}
+						<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-destructive">
+							platform demo
+						</span>
+					</h2>
+					<p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+						See how SeaGUARD helps communities prepare, respond, and recover from natural disasters.
+					</p>
+				</div>
+
+				<div className="clay rounded-3xl p-3 sm:p-4 max-w-4xl mx-auto">
+					<div className="relative w-full rounded-2xl overflow-hidden bg-muted aspect-video flex items-center justify-center">
+						{/* Replace the src below with your actual video embed URL */}
+						<iframe
+							className="absolute inset-0 w-full h-full"
+							src=""
+							title="SeaGUARD Demo Video"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowFullScreen
+						/>
+						{/* Placeholder overlay shown when no video src is set */}
+						<div className="relative z-10 flex flex-col items-center gap-4 text-muted-foreground">
+							<div className="clay h-16 w-16 rounded-full flex items-center justify-center bg-primary/10">
+								<svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M8 5v14l11-7z" />
+								</svg>
+							</div>
+							<span className="text-sm font-semibold">Demo video coming soon</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			{/* App Showcase Section */}
 			<section className="relative w-full max-w-7xl mx-auto px-6 py-10 lg:py-16 z-10 flex flex-col items-center">
-
-				{/* Heading */}
 				<h2 className="text-2xl lg:text-5xl font-black tracking-tight text-center max-w-3xl mb-4 lg:mb-8 px-4">
 					A simple and trusted disaster response and recovery platform
 				</h2>
 
-				{/* Images Container */}
 				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center mt-12 px-4 sm:px-8 pb-16">
-					{/* Macbook */}
-					<img 
-						src="/macbook.png" 
-						alt="Dashboard on Macbook" 
+					<img
+						src="/macbook.png"
+						alt="Dashboard on Macbook"
 						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-float ml-auto"
 					/>
-					{/* Phone */}
-					<img 
-						src="/phone.png" 
-						alt="Mobile app on Phone" 
+					<img
+						src="/phone.png"
+						alt="Mobile app on Phone"
 						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[35%] sm:bottom-[45%] lg:bottom-[40%] w-[55%] md:w-[45%] lg:w-[40%] max-w-[320px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 animate-float-reverse"
 					/>
 				</div>
