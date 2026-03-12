@@ -75,6 +75,7 @@ const getDisasterImage = (disasterType: string) => {
 };
 
 const ACTIVITY_PER_PAGE = 10;
+const ZONES_PER_PAGE = 10;
 
 const CountryDetailPage = () => {
   type ActivityItem =
@@ -104,6 +105,7 @@ const CountryDetailPage = () => {
   const miniMapInstance = useRef<L.Map | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
+  const [zonePage, setZonePage] = useState(1);
   const [expandedReportTimelines, setExpandedReportTimelines] = useState<Record<string, boolean>>({});
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
@@ -272,6 +274,12 @@ const CountryDetailPage = () => {
     const start = (currentActivityPage - 1) * ACTIVITY_PER_PAGE;
     return activityItems.slice(start, start + ACTIVITY_PER_PAGE);
   }, [activityItems, currentActivityPage]);
+  const zoneTotalPages = Math.max(1, Math.ceil(sortedCountryZones.length / ZONES_PER_PAGE));
+  const currentZonePage = Math.min(zonePage, zoneTotalPages);
+  const pagedSortedCountryZones = useMemo(() => {
+    const start = (currentZonePage - 1) * ZONES_PER_PAGE;
+    return sortedCountryZones.slice(start, start + ZONES_PER_PAGE);
+  }, [sortedCountryZones, currentZonePage]);
   const hasActivityDataError = (
     isCountryNewsError
     || isReportSummariesError
@@ -362,12 +370,17 @@ const CountryDetailPage = () => {
 
   useEffect(() => {
     setActivityPage(1);
+    setZonePage(1);
     setExpandedReportTimelines({});
   }, [country]);
 
   useEffect(() => {
     setActivityPage((page) => Math.min(page, activityTotalPages));
   }, [activityTotalPages]);
+
+  useEffect(() => {
+    setZonePage((page) => Math.min(page, zoneTotalPages));
+  }, [zoneTotalPages]);
 
   if (isStatusLoading) {
     return (
@@ -390,9 +403,9 @@ const CountryDetailPage = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-background pb-6">
+    <div className="h-full overflow-y-auto px-4 pb-6">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-card border-b border-border sticky top-0 z-10">
+      <div className="flex items-center gap-3 px-4 bg-card mt-4 rounded-xl pt-4 pb-3 border-b ">
         <button onClick={() => navigate(-1)} className="p-1 rounded-lg hover:bg-accent">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -421,8 +434,8 @@ const CountryDetailPage = () => {
           <p className="text-[10px] text-muted-foreground">{t('people_affected')}</p>
         </div>
       </div>
+    
 
-      Forecast
       {status.prediction && (
         <div className="mx-4 mt-4 rounded-xl p-3 border border-border"
           style={{ background: `${zoneColors[status.alertLevel]}10` }}>
@@ -468,7 +481,7 @@ const CountryDetailPage = () => {
                 No mapped disaster zones for this country yet.
               </div>
             )}
-            {sortedCountryZones.map((zone) => {
+            {pagedSortedCountryZones.map((zone) => {
               const areaKm2 = Math.PI * ((zone.radius / 1000) ** 2);
               return (
                 <div key={zone.id} className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2">
@@ -478,6 +491,29 @@ const CountryDetailPage = () => {
                 </div>
               );
             })}
+            {zoneTotalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <button
+                  onClick={() => setZonePage((page) => Math.max(1, page - 1))}
+                  disabled={currentZonePage === 1}
+                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Prev
+                </button>
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {currentZonePage} / {zoneTotalPages}
+                </span>
+                <button
+                  onClick={() => setZonePage((page) => Math.min(zoneTotalPages, page + 1))}
+                  disabled={currentZonePage === zoneTotalPages}
+                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent text-foreground"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
