@@ -287,22 +287,17 @@ const LandingPage = () => {
 				</p>
 
 				<div className="relative w-full max-w-5xl mx-auto flex justify-center items-center px-4 sm:px-8 pb-16">
-					{/* Macbook with clay frame */}
-					<div className="relative w-full md:w-[75%] ml-auto z-10 animate-fade-in clay rounded-2xl p-2">
-						<img
-							src="/macbook.png"
-							alt="Dashboard on Macbook"
-							className="w-full object-contain rounded-xl"
-						/>
-					</div>
-					{/* Phone with clay frame */}
-					<div className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[30%] sm:bottom-[40%] lg:bottom-[35%] w-[50%] md:w-[40%] lg:w-[35%] max-w-[280px] z-20 animate-scale-in clay rounded-2xl p-1.5" style={{ animationDelay: "0.15s" }}>
-						<img
-							src="/phone.png"
-							alt="Mobile app on Phone"
-							className="w-full object-contain rounded-xl"
-						/>
-					</div>
+					<img
+						src="/macbook.png"
+						alt="Dashboard on Macbook"
+						className="relative w-full md:w-[75%] object-contain drop-shadow-2xl z-10 animate-fade-in ml-auto"
+					/>
+					<img
+						src="/phone.png"
+						alt="Mobile app on Phone"
+						className="absolute left-[5%] sm:left-[10%] lg:left-[15%] bottom-[30%] sm:bottom-[40%] lg:bottom-[35%] w-[50%] md:w-[40%] lg:w-[35%] max-w-[280px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-20 animate-scale-in"
+						style={{ animationDelay: "0.15s" }}
+					/>
 				</div>
 
 				{/* Trust badges */}
