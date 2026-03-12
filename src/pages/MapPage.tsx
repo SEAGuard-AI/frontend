@@ -3,7 +3,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   disasterZones,
-  populationClusters,
   aseanCountries,
   countryDefaultCenters,
   type PopulationCluster,
@@ -12,7 +11,6 @@ import {
 } from "@/data/mockData";
 import {
   X,
-  Layers,
   Filter,
   ChevronDown,
   Navigation,
@@ -67,7 +65,7 @@ const MapPage = () => {
   const mapInstance = useRef<L.Map | null>(null);
   const [selectedCluster, setSelectedCluster] =
     useState<PopulationCluster | null>(null);
-  const [showHeatmap, setShowHeatmap] = useState(true);
+
   const [filterType, setFilterType] = useState<DisasterType>("flood");
   const { preferences } = usePreferences();
   const [selectedCountry, setSelectedCountry] = useState(
@@ -326,7 +324,7 @@ const MapPage = () => {
         map.removeLayer(l);
       }
     });
-  }, [selectedCountry, filterType, showHeatmap]);
+  }, [selectedCountry, filterType]);
 
   // Location search using Nominatim
   const handleSearch = (query: string) => {
@@ -444,23 +442,12 @@ const MapPage = () => {
               )}
             </button>
 
-            {/* Filter & Heatmap toggles */}
+            {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="clay-sm backdrop-blur-md bg-card/70 p-2 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-clay active:animate-clay-bounce"
             >
               <Filter className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setShowHeatmap(!showHeatmap)}
-              className={cn(
-                "backdrop-blur-md bg-card/70 p-2 transition-all duration-300 hover:-translate-y-0.5 active:animate-clay-bounce",
-                showHeatmap
-                  ? "clay-primary text-primary"
-                  : "clay-sm text-foreground hover:shadow-clay",
-              )}
-            >
-              <Layers className="h-4 w-4" />
             </button>
           </div>
 
@@ -547,8 +534,9 @@ const MapPage = () => {
             ZONE STATUS
           </p>
           <div className="space-y-1">
-            {(Object.entries(zoneLabels) as [ZoneLevel, string][]).map(
-              ([level, label]) => (
+            {(Object.entries(zoneLabels) as [ZoneLevel, string][])
+              .filter(([level]) => level !== "evacuation")
+              .map(([level, label]) => (
                 <div key={level} className="flex items-center gap-2">
                   <div
                     className="h-2.5 w-2.5 rounded-full"
@@ -556,8 +544,7 @@ const MapPage = () => {
                   />
                   <span className="text-[11px] text-foreground">{label}</span>
                 </div>
-              ),
-            )}
+              ))}
             {/* Detect Mode legend rows */}
             {detectMode && (
               <>
