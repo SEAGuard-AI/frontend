@@ -104,16 +104,19 @@ npm run preview
 
 ## Screenshots
 
-| Landing Page | Home |
-|:---:|:---:|
-| <img src="docs/landing-page.png" width="400"/> | <img src="docs/home-page.png" width="400"/> |
+**Landing Page**
+![Landing Page](docs/landing-page.png)
 
-| Maps | Contact |
-|:---:|:---:|
-| <img src="docs/maps-page.png" width="400"/> | <img src="docs/contact-page.png" width="400"/> |
+**Home**
+![Home](docs/home-page.png)
 
-| Profile |  |
-|:---:|:---:|
-| <img src="docs/profile-page.png" width="400"/> |  |
+**Maps**
+![Maps](docs/maps-page.png)
+
+**Contact**
+![Contact](docs/contact-page.png)
+
+**Profile**
+![Profile](docs/profile-page.png)
 
 ---
