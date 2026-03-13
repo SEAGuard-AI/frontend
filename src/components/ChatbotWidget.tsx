@@ -82,7 +82,7 @@ const ChatbotWidget = () => {
 
     try {
       const history = messages.map((m) => ({
-        role: m.role,
+        role: m.role === "assistant" ? "model" : "user",
         content: m.content,
       }));
 
