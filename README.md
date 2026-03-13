@@ -103,10 +103,17 @@ npm run preview
 ---
 
 ## Screenshots
-![Dashboard Overview](docs/screenshots/dashboard.png)
-*Home dashboard showing active alerts and regional status.*
 
-![Interactive Map](docs/screenshots/map.png)
-*Disaster zones and shelter location on the interactive map.*
+| Landing Page | Home |
+|:---:|:---:|
+| <img src="docs/landing-page.png" width="400"/> | <img src="docs/home-page.png" width="400"/> |
+
+| Maps | Contact |
+|:---:|:---:|
+| <img src="docs/maps-page.png" width="400"/> | <img src="docs/contact-page.png" width="400"/> |
+
+| Profile |  |
+|:---:|:---:|
+| <img src="docs/profile-page.png" width="400"/> |  |
 
 ---
