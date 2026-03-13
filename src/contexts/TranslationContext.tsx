@@ -10,7 +10,9 @@ type TranslationKey =
   | 'active_disasters' | 'people_affected' | 'recent_events' | 'disaster_map'
   | 'related_news' | 'breaking' | 'stable' | 'caution' | 'critical'
   | 'near_evacuation' | 'caution_zone' | 'danger_zone' | 'go_back'
-  | 'country_not_found' | 'save' | 'cancel' | 'search_location';
+  | 'country_not_found' | 'save' | 'cancel' | 'search_location'
+  | 'guide_not_found' | 'guide_step' | 'guide_steps' | 'guide_remember'
+  | 'guide_share_note';
 
 const translations: Record<string, Record<TranslationKey, string>> = {
   English: {
@@ -29,6 +31,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Near Evacuation Point', caution_zone: 'Caution Zone',
     danger_zone: 'Danger Zone', go_back: 'Go Back', country_not_found: 'Country not found',
     save: 'Save', cancel: 'Cancel', search_location: 'Search location...',
+    guide_not_found: 'Guide not found', guide_step: 'Step', guide_steps: 'Steps',
+    guide_remember: 'Remember',
+    guide_share_note: 'Share this guide with family and neighbors so everyone knows what to do before an emergency.',
   },
   'Bahasa Indonesia': {
     overview: 'Ringkasan', local_updates: 'Berita Lokal', risk_forecast: 'Prakiraan Risiko',
@@ -46,6 +51,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Dekat Titik Evakuasi', caution_zone: 'Zona Waspada',
     danger_zone: 'Zona Bahaya', go_back: 'Kembali', country_not_found: 'Negara tidak ditemukan',
     save: 'Simpan', cancel: 'Batal', search_location: 'Cari lokasi...',
+    guide_not_found: 'Panduan tidak ditemukan', guide_step: 'Langkah', guide_steps: 'Langkah',
+    guide_remember: 'Ingat',
+    guide_share_note: 'Bagikan panduan ini kepada keluarga dan tetangga agar semua orang tahu apa yang harus dilakukan sebelum keadaan darurat.',
   },
   Filipino: {
     overview: 'Pangkalahatang-ideya', local_updates: 'Lokal na Balita', risk_forecast: 'Pagtataya ng Panganib',
@@ -63,6 +71,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Malapit sa Evacuation', caution_zone: 'Zona ng Babala',
     danger_zone: 'Zona ng Panganib', go_back: 'Bumalik', country_not_found: 'Hindi nahanap ang bansa',
     save: 'I-save', cancel: 'Kanselahin', search_location: 'Maghanap ng lokasyon...',
+    guide_not_found: 'Hindi nakita ang gabay', guide_step: 'Hakbang', guide_steps: 'Mga Hakbang',
+    guide_remember: 'Tandaan',
+    guide_share_note: 'Ibahagi ang gabay na ito sa pamilya at mga kapitbahay para alam ng lahat ang gagawin bago ang emergency.',
   },
   'ภาษาไทย': {
     overview: 'ภาพรวม', local_updates: 'ข่าวท้องถิ่น', risk_forecast: 'การพยากรณ์ความเสี่ยง',
@@ -80,6 +91,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'ใกล้จุดอพยพ', caution_zone: 'เขตเฝ้าระวัง',
     danger_zone: 'เขตอันตราย', go_back: 'กลับ', country_not_found: 'ไม่พบประเทศ',
     save: 'บันทึก', cancel: 'ยกเลิก', search_location: 'ค้นหาตำแหน่ง...',
+    guide_not_found: 'ไม่พบคู่มือ', guide_step: 'ขั้นตอน', guide_steps: 'ขั้นตอน',
+    guide_remember: 'จำไว้',
+    guide_share_note: 'แชร์คู่มือนี้กับครอบครัวและเพื่อนบ้าน เพื่อให้ทุกคนรู้ว่าควรทำอย่างไรก่อนเกิดเหตุฉุกเฉิน',
   },
   'Tiếng Việt': {
     overview: 'Tổng quan', local_updates: 'Tin địa phương', risk_forecast: 'Dự báo rủi ro',
@@ -97,6 +111,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Gần điểm sơ tán', caution_zone: 'Vùng cảnh báo',
     danger_zone: 'Vùng nguy hiểm', go_back: 'Quay lại', country_not_found: 'Không tìm thấy quốc gia',
     save: 'Lưu', cancel: 'Hủy', search_location: 'Tìm vị trí...',
+    guide_not_found: 'Không tìm thấy hướng dẫn', guide_step: 'Bước', guide_steps: 'Bước',
+    guide_remember: 'Ghi nhớ',
+    guide_share_note: 'Hãy chia sẻ hướng dẫn này với gia đình và hàng xóm để mọi người biết cần làm gì trước khi có tình huống khẩn cấp.',
   },
   'Bahasa Melayu': {
     overview: 'Gambaran', local_updates: 'Berita Tempatan', risk_forecast: 'Ramalan Risiko',
@@ -114,6 +131,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Dekat Pusat Pemindahan', caution_zone: 'Zon Amaran',
     danger_zone: 'Zon Bahaya', go_back: 'Kembali', country_not_found: 'Negara tidak dijumpai',
     save: 'Simpan', cancel: 'Batal', search_location: 'Cari lokasi...',
+    guide_not_found: 'Panduan tidak ditemui', guide_step: 'Langkah', guide_steps: 'Langkah',
+    guide_remember: 'Ingat',
+    guide_share_note: 'Kongsi panduan ini dengan keluarga dan jiran supaya semua orang tahu apa yang perlu dilakukan sebelum kecemasan.',
   },
   'မြန်မာစာ': {
     overview: 'ခြုံငုံသုံးသပ်ချက်', local_updates: 'ဒေသတွင်းသတင်းများ', risk_forecast: 'အန္တရာယ်ခန့်မှန်းချက်',
@@ -131,6 +151,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'ရွှေ့ပြောင်းရေးအနီး', caution_zone: 'သတိထားဇုန်',
     danger_zone: 'အန္တရာယ်ဇုန်', go_back: 'နောက်သို့', country_not_found: 'နိုင်ငံမတွေ့ပါ',
     save: 'သိမ်းဆည်းရန်', cancel: 'ပယ်ဖျက်ရန်', search_location: 'တည်နေရာရှာရန်...',
+    guide_not_found: 'လမ်းညွှန်ကို မတွေ့ပါ', guide_step: 'အဆင့်', guide_steps: 'အဆင့်များ',
+    guide_remember: 'မှတ်ထားပါ',
+    guide_share_note: 'အရေးပေါ်အခြေအနေမတိုင်မီ ဘာလုပ်ရမည်ကို လူတိုင်းသိစေရန် ဤလမ်းညွှန်ကို မိသားစုနှင့် အိမ်နီးချင်းများထံ မျှဝေပါ။',
   },
   'ភាសាខ្មែរ': {
     overview: 'ទិដ្ឋភាពទូទៅ', local_updates: 'ព័ត៌មានក្នុងស្រុក', risk_forecast: 'ការព្យាករណ៍ហានិភ័យ',
@@ -148,6 +171,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'នៅជិតចំណុចជម្លៀស', caution_zone: 'តំបន់ប្រុងប្រយ័ត្ន',
     danger_zone: 'តំបន់គ្រោះថ្នាក់', go_back: 'ត្រឡប់ក្រោយ', country_not_found: 'រកប្រទេសមិនឃើញ',
     save: 'រក្សាទុក', cancel: 'បោះបង់', search_location: 'ស្វែងរកទីតាំង...',
+    guide_not_found: 'រកមិនឃើញមគ្គុទ្ទេសក៍', guide_step: 'ជំហាន', guide_steps: 'ជំហាន',
+    guide_remember: 'ចងចាំ',
+    guide_share_note: 'សូមចែករំលែកមគ្គុទ្ទេសក៍នេះជាមួយគ្រួសារ និងអ្នកជិតខាង ដើម្បីឱ្យគ្រប់គ្នាដឹងថាត្រូវធ្វើអ្វីមុនពេលមានអាសន្ន។',
   },
   'ພາສາລາວ': {
     overview: 'ພາບລວມ', local_updates: 'ຂ່າວທ້ອງຖິ່ນ', risk_forecast: 'ການຄາດຄະເນຄວາಮສ່ຽງ',
@@ -165,6 +191,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'ໃກ້ຈຸດຍົກຍ້າຍ', caution_zone: 'ເຂດລະວັງ',
     danger_zone: 'ເຂດອັນຕະລາຍ', go_back: 'ກັບຄືນ', country_not_found: 'ບໍ່ພົບປະເທດ',
     save: 'ບັນທຶກ', cancel: 'ຍົກເລີກ', search_location: 'ຊອກຫາທີ່ຢູ່...',
+    guide_not_found: 'ບໍ່ພົບຄູ່ມື', guide_step: 'ຂັ້ນຕອນ', guide_steps: 'ຂັ້ນຕອນ',
+    guide_remember: 'ຈື່ໄວ້',
+    guide_share_note: 'ແບ່ງປັນຄູ່ມືນີ້ໃຫ້ຄອບຄົວ ແລະ ເພື່ອນບ້ານ ເພື່ອໃຫ້ທຸກຄົນຮູ້ວ່າຄວນເຮັດຫຍັງກ່ອນເກີດເຫດສຸກເສີນ',
   },
 };
 
