@@ -11,6 +11,8 @@ type TranslationKey =
   | 'related_news' | 'breaking' | 'stable' | 'caution' | 'critical'
   | 'near_evacuation' | 'caution_zone' | 'danger_zone' | 'go_back'
   | 'country_not_found' | 'save' | 'cancel' | 'search_location'
+  | 'guide_not_found' | 'guide_step' | 'guide_steps' | 'guide_remember'
+  | 'guide_share_note'
   | 'emergency_contacts' | 'detecting_location' | 'showing_contacts_for'
   | 'sos_emergency' | 'search_contacts' | 'all' | 'loading_contacts'
   | 'away' | 'no_contacts_found' | 'sar_team' | 'ambulance_cat'
@@ -33,6 +35,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Near Evacuation Point', caution_zone: 'Caution Zone',
     danger_zone: 'Danger Zone', go_back: 'Go Back', country_not_found: 'Country not found',
     save: 'Save', cancel: 'Cancel', search_location: 'Search location...',
+    guide_not_found: 'Guide not found', guide_step: 'Step', guide_steps: 'Steps',
+    guide_remember: 'Remember',
+    guide_share_note: 'Share this guide with family and neighbors so everyone knows what to do before an emergency.',
     emergency_contacts: 'Emergency Contacts', detecting_location: 'Detecting location…',
     showing_contacts_for: 'Showing contacts for', sos_emergency: 'SOS — EMERGENCY',
     search_contacts: 'Search contacts...', all: 'All', loading_contacts: 'Loading emergency contacts…',
@@ -55,6 +60,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Dekat Titik Evakuasi', caution_zone: 'Zona Waspada',
     danger_zone: 'Zona Bahaya', go_back: 'Kembali', country_not_found: 'Negara tidak ditemukan',
     save: 'Simpan', cancel: 'Batal', search_location: 'Cari lokasi...',
+    guide_not_found: 'Panduan tidak ditemukan', guide_step: 'Langkah', guide_steps: 'Langkah',
+    guide_remember: 'Ingat',
+    guide_share_note: 'Bagikan panduan ini kepada keluarga dan tetangga agar semua orang tahu apa yang harus dilakukan sebelum keadaan darurat.',
     emergency_contacts: 'Kontak Darurat', detecting_location: 'Mendeteksi lokasi…',
     showing_contacts_for: 'Menampilkan kontak untuk', sos_emergency: 'SOS — DARURAT',
     search_contacts: 'Cari kontak...', all: 'Semua', loading_contacts: 'Memuat kontak darurat…',
@@ -77,6 +85,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Malapit sa Evacuation', caution_zone: 'Zona ng Babala',
     danger_zone: 'Zona ng Panganib', go_back: 'Bumalik', country_not_found: 'Hindi nahanap ang bansa',
     save: 'I-save', cancel: 'Kanselahin', search_location: 'Maghanap ng lokasyon...',
+    guide_not_found: 'Hindi nakita ang gabay', guide_step: 'Hakbang', guide_steps: 'Mga Hakbang',
+    guide_remember: 'Tandaan',
+    guide_share_note: 'Ibahagi ang gabay na ito sa pamilya at mga kapitbahay para alam ng lahat ang gagawin bago ang emergency.',
     emergency_contacts: 'Mga Pang-emergency na Kontak', detecting_location: 'Tinutukoy ang lokasyon…',
     showing_contacts_for: 'Ipinapakita ang mga kontak para sa', sos_emergency: 'SOS — EMERGENCY',
     search_contacts: 'Maghanap ng kontak...', all: 'Lahat', loading_contacts: 'Kinakarga ang mga kontak…',
@@ -99,6 +110,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'ใกล้จุดอพยพ', caution_zone: 'เขตเฝ้าระวัง',
     danger_zone: 'เขตอันตราย', go_back: 'กลับ', country_not_found: 'ไม่พบประเทศ',
     save: 'บันทึก', cancel: 'ยกเลิก', search_location: 'ค้นหาตำแหน่ง...',
+    guide_not_found: 'ไม่พบคู่มือ', guide_step: 'ขั้นตอน', guide_steps: 'ขั้นตอน',
+    guide_remember: 'จำไว้',
+    guide_share_note: 'แชร์คู่มือนี้กับครอบครัวและเพื่อนบ้าน เพื่อให้ทุกคนรู้ว่าควรทำอย่างไรก่อนเกิดเหตุฉุกเฉิน',
     emergency_contacts: 'ข้อมูลติดต่อฉุกเฉิน', detecting_location: 'กำลังตรวจหาตำแหน่ง…',
     showing_contacts_for: 'แสดงข้อมูลติดต่อสำหรับ', sos_emergency: 'SOS — ฉุกเฉิน',
     search_contacts: 'ค้นหาผู้ติดต่อ...', all: 'ทั้งหมด', loading_contacts: 'กำลังโหลดข้อมูลติดต่อฉุกเฉิน…',
@@ -121,6 +135,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Gần điểm sơ tán', caution_zone: 'Vùng cảnh báo',
     danger_zone: 'Vùng nguy hiểm', go_back: 'Quay lại', country_not_found: 'Không tìm thấy quốc gia',
     save: 'Lưu', cancel: 'Hủy', search_location: 'Tìm vị trí...',
+    guide_not_found: 'Không tìm thấy hướng dẫn', guide_step: 'Bước', guide_steps: 'Bước',
+    guide_remember: 'Ghi nhớ',
+    guide_share_note: 'Hãy chia sẻ hướng dẫn này với gia đình và hàng xóm để mọi người biết cần làm gì trước khi có tình huống khẩn cấp.',
     emergency_contacts: 'Liên hệ khẩn cấp', detecting_location: 'Đang xác định vị trí…',
     showing_contacts_for: 'Hiển thị liên hệ cho', sos_emergency: 'SOS — KHẨN CẤP',
     search_contacts: 'Tìm kiếm liên hệ...', all: 'Tất cả', loading_contacts: 'Đang tải liên hệ khẩn cấp…',
@@ -143,6 +160,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'Dekat Pusat Pemindahan', caution_zone: 'Zon Amaran',
     danger_zone: 'Zon Bahaya', go_back: 'Kembali', country_not_found: 'Negara tidak dijumpai',
     save: 'Simpan', cancel: 'Batal', search_location: 'Cari lokasi...',
+    guide_not_found: 'Panduan tidak ditemui', guide_step: 'Langkah', guide_steps: 'Langkah',
+    guide_remember: 'Ingat',
+    guide_share_note: 'Kongsi panduan ini dengan keluarga dan jiran supaya semua orang tahu apa yang perlu dilakukan sebelum kecemasan.',
     emergency_contacts: 'Hubungan Kecemasan', detecting_location: 'Mengesan lokasi…',
     showing_contacts_for: 'Menunjukkan kenalan untuk', sos_emergency: 'SOS — KECEMASAN',
     search_contacts: 'Cari kenalan...', all: 'Semua', loading_contacts: 'Memuatkan kenalan kecemasan…',
@@ -165,6 +185,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'នៅជិតចំណុចជម្លៀស', caution_zone: 'តំបន់ប្រុងប្រយ័ត្ន',
     danger_zone: 'តំបន់គ្រោះថ្នាក់', go_back: 'ត្រឡប់ក្រោយ', country_not_found: 'រកប្រទេសមិនឃើញ',
     save: 'រក្សាទុក', cancel: 'បោះបង់', search_location: 'ស្វែងរកទីតាំង...',
+    guide_not_found: 'រកមិនឃើញមគ្គុទ្ទេសក៍', guide_step: 'ជំហាន', guide_steps: 'ជំហាន',
+    guide_remember: 'ចងចាំ',
+    guide_share_note: 'សូមចែករំលែកមគ្គុទ្ទេសក៍នេះជាមួយគ្រួសារ និងអ្នកជិតខាង ដើម្បីឱ្យគ្រប់គ្នាដឹងថាត្រូវធ្វើអ្វីមុនពេលមានអាសន្ន។',
     emergency_contacts: 'ទំនាក់ទំនងបន្ទាន់', detecting_location: 'កំពុងស្វែងរកទីតាំង…',
     showing_contacts_for: 'បង្ហាញទំនាក់ទំនងសម្រាប់', sos_emergency: 'SOS — បន្ទាន់',
     search_contacts: 'ស្វែងរកទំនាក់ទំនង...', all: 'ទាំងអស់', loading_contacts: 'កំពុងទាញយកទំនាក់ទំនងបន្ទាន់…',
@@ -192,6 +215,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     search_contacts: 'အဆက်အသွယ်ရှာရန်...', all: 'အားလုံး', loading_contacts: 'အရေးပေါ်အဆက်အသွယ်များရယူနေပါသည်…',
     away: 'အကွာအဝေး', no_contacts_found: 'အဆက်အသွယ်ရှာမတွေ့ပါ - ', sar_team: 'ရှာဖွေကယ်ဆယ်ရေးအဖွဲ့',
     ambulance_cat: 'လူနာတင်ယာဉ်', police_cat: 'ရဲတပ်ဖွဲ့', hospital_cat: 'ဆေးရုံ',
+    guide_not_found: 'လမ်းညွှန်ကို မတွေ့ပါ', guide_step: 'အဆင့်', guide_steps: 'အဆင့်များ',
+    guide_remember: 'မှတ်ထားပါ',
+    guide_share_note: 'အရေးပေါ်အခြေအနေမတိုင်မီ ဘာလုပ်ရမည်ကို လူတိုင်းသိစေရန် ဤလမ်းညွှန်ကို မိသားစုနှင့် အိမ်နီးချင်းများထံ မျှဝေပါ။',
   },
   'ພາສາລາວ': {
     overview: 'ພາບລວມ', local_updates: 'ຂ່າວທ້ອງຖິ່ນ', risk_forecast: 'ການຄາດຄະເນຄວາಮສ່ຽງ',
@@ -209,6 +235,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     near_evacuation: 'ໃກ້ຈຸດຍົກຍ້າຍ', caution_zone: 'ເຂດລະວັງ',
     danger_zone: 'ເຂດອັນຕະລາຍ', go_back: 'ກັບຄືນ', country_not_found: 'ບໍ່ພົບປະເທດ',
     save: 'ບັນທຶກ', cancel: 'ຍົກເລີກ', search_location: 'ຊອກຫາທີ່ຢູ່...',
+    guide_not_found: 'ບໍ່ພົບຄູ່ມື', guide_step: 'ຂັ້ນຕອນ', guide_steps: 'ຂັ້ນຕອນ',
+    guide_remember: 'ຈື່ໄວ້',
+    guide_share_note: 'ແບ່ງປັນຄູ່ມືນີ້ໃຫ້ຄອບຄົວ ແລະ ເພື່ອນບ້ານ ເພື່ອໃຫ້ທຸກຄົນຮູ້ວ່າຄວນເຮັດຫຍັງກ່ອນເກີດເຫດສຸກເສີນ',
     emergency_contacts: 'ການຕິດຕໍ່ສຸກເສີນ', detecting_location: 'ກຳລັງກວດຫາທີ່ຢູ່…',
     showing_contacts_for: 'ສະແດງການຕິດຕໍ່ສຳລັບ', sos_emergency: 'SOS — ສຸກເສີນ',
     search_contacts: 'ຄົ້ນຫາການຕິດຕໍ່...', all: 'ທັງໝົດ', loading_contacts: 'ກຳລັງໂຫຼດຂໍ້ມູນຕິດຕໍ່ສຸກເສີນ…',

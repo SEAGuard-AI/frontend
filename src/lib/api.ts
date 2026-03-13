@@ -92,6 +92,23 @@ export interface DisasterNewsItem {
   sourceUrl: string | null;
 }
 
+export interface ExternalNewsItem {
+  id: string;
+  country: string;
+  countryCode: string;
+  countryTimezone: string;
+  fetchDateLocal: string;
+  fetchMode: "top_headlines" | "everything";
+  disasterType: string;
+  title: string;
+  summary: string;
+  sourceName: string;
+  sourceId: string | null;
+  sourceUrl: string;
+  imageUrl: string;
+  publishedAt: string;
+}
+
 export interface CountryStatusItem {
   id: string;
   country: string;
@@ -114,6 +131,12 @@ export interface SurvivalTipItem {
 export const dashboardApi = {
   getLocalNews: (country: string) =>
     apiFetch(`/news?country=${encodeURIComponent(country)}`) as Promise<DisasterNewsItem[]>,
+  getExternalNews: (country?: string) =>
+    apiFetch(
+      country
+        ? `/external-news?country=${encodeURIComponent(country)}&limit=10`
+        : "/external-news",
+    ) as Promise<ExternalNewsItem[]>,
   getGlobalNews: () =>
     apiFetch('/news?global=true') as Promise<DisasterNewsItem[]>,
   getCountryStatuses: () =>
