@@ -168,9 +168,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     search_contacts: 'Cari kenalan...', all: 'Semua', loading_contacts: 'Memuatkan kenalan kecemasan…',
     away: 'jauh', no_contacts_found: 'Tiada kenalan dijumpai untuk', sar_team: 'Pasukan SAR',
     ambulance_cat: 'Ambulans', police_cat: 'Polis', hospital_cat: 'Hospital',
-    guide_not_found: 'လမ်းညွှန်ကို မတွေ့ပါ', guide_step: 'အဆင့်', guide_steps: 'အဆင့်များ',
-    guide_remember: 'မှတ်ထားပါ',
-    guide_share_note: 'အရေးပေါ်အခြေအနေမတိုင်မီ ဘာလုပ်ရမည်ကို လူတိုင်းသိစေရန် ဤလမ်းညွှန်ကို မိသားစုနှင့် အိမ်နီးချင်းများထံ မျှဝေပါ။',
+    guide_not_found: 'Panduan tidak dijumpai', guide_step: 'Langkah', guide_steps: 'Langkah-langkah',
+    guide_remember: 'Ingat',
+    guide_share_note: 'Kongsi panduan ini dengan keluarga dan jiran supaya semua orang tahu apa yang perlu dilakukan sebelum kecemasan.',
   },
   'ភាសាខ្មែរ': {
     overview: 'ទិដ្ឋភាពទូទៅ', local_updates: 'ព័ត៌មានក្នុងស្រុក', risk_forecast: 'ការព្យាករណ៍ហានិភ័យ',
