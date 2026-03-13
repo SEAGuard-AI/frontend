@@ -168,9 +168,6 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     search_contacts: 'Cari kenalan...', all: 'Semua', loading_contacts: 'Memuatkan kenalan kecemasan…',
     away: 'jauh', no_contacts_found: 'Tiada kenalan dijumpai untuk', sar_team: 'Pasukan SAR',
     ambulance_cat: 'Ambulans', police_cat: 'Polis', hospital_cat: 'Hospital',
-    guide_not_found: 'လမ်းညွှန်ကို မတွေ့ပါ', guide_step: 'အဆင့်', guide_steps: 'အဆင့်များ',
-    guide_remember: 'မှတ်ထားပါ',
-    guide_share_note: 'အရေးပေါ်အခြေအနေမတိုင်မီ ဘာလုပ်ရမည်ကို လူတိုင်းသိစေရန် ဤလမ်းညွှန်ကို မိသားစုနှင့် အိမ်နီးချင်းများထံ မျှဝေပါ။',
   },
   'ភាសាខ្មែរ': {
     overview: 'ទិដ្ឋភាពទូទៅ', local_updates: 'ព័ត៌មានក្នុងស្រុក', risk_forecast: 'ការព្យាករណ៍ហានិភ័យ',
@@ -218,6 +215,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     search_contacts: 'အဆက်အသွယ်ရှာရန်...', all: 'အားလုံး', loading_contacts: 'အရေးပေါ်အဆက်အသွယ်များရယူနေပါသည်…',
     away: 'အကွာအဝေး', no_contacts_found: 'အဆက်အသွယ်ရှာမတွေ့ပါ - ', sar_team: 'ရှာဖွေကယ်ဆယ်ရေးအဖွဲ့',
     ambulance_cat: 'လူနာတင်ယာဉ်', police_cat: 'ရဲတပ်ဖွဲ့', hospital_cat: 'ဆေးရုံ',
+    guide_not_found: 'လမ်းညွှန်ကို မတွေ့ပါ', guide_step: 'အဆင့်', guide_steps: 'အဆင့်များ',
+    guide_remember: 'မှတ်ထားပါ',
+    guide_share_note: 'အရေးပေါ်အခြေအနေမတိုင်မီ ဘာလုပ်ရမည်ကို လူတိုင်းသိစေရန် ဤလမ်းညွှန်ကို မိသားစုနှင့် အိမ်နီးချင်းများထံ မျှဝေပါ။',
   },
   'ພາສາລາວ': {
     overview: 'ພາບລວມ', local_updates: 'ຂ່າວທ້ອງຖິ່ນ', risk_forecast: 'ການຄາດຄະເນຄວາಮສ່ຽງ',
