@@ -257,25 +257,17 @@ const LandingPage = () => {
 				</div>
 
 				<div className="clay rounded-3xl p-3 sm:p-4 max-w-4xl mx-auto">
-					<div className="relative w-full rounded-2xl overflow-hidden bg-muted aspect-video flex items-center justify-center">
-						{/* Replace the src below with your actual video embed URL */}
-						<iframe
-							className="absolute inset-0 w-full h-full"
-							src=""
-							title="SEAGuard Demo Video"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							allowFullScreen
-						/>
-						{/* Placeholder overlay shown when no video src is set */}
-						<div className="relative z-10 flex flex-col items-center gap-4 text-muted-foreground">
-							<div className="clay h-16 w-16 rounded-full flex items-center justify-center bg-primary/10">
-								<svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M8 5v14l11-7z" />
-								</svg>
-							</div>
-							<span className="text-sm font-semibold">Demo video coming soon</span>
-						</div>
-					</div>
+				<div className="relative w-full rounded-2xl overflow-hidden bg-muted aspect-video">
+					<iframe
+						className="absolute inset-0 w-full h-full"
+						src="https://www.youtube.com/embed/V1KbQe4totI?si=vaoR2GIjCkOauKZG"
+						title="SEAGuard Demo Video"
+						frameBorder="0"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						referrerPolicy="strict-origin-when-cross-origin"
+						allowFullScreen
+					/>
+				</div>
 				</div>
 			</section>
 
