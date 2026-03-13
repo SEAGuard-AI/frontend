@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { usePreferences } from "@/contexts/UserPreferencesContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import NewsCard from "@/components/NewsCard";
 import {
 	dashboardApi,
 	type CountryStatusItem,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 
 const LOCAL_NEWS_PER_PAGE = 3;
+const EXTERNAL_NEWS_PER_PAGE = 2;
 const GLOBAL_NEWS_PER_PAGE = 10;
 
 const ASEAN_COUNTRIES = [
@@ -110,6 +112,7 @@ const HomePage = () => {
 	const navigate = useNavigate();
 
 	const [localNewsPage, setLocalNewsPage] = useState(1);
+	const [externalNewsPage, setExternalNewsPage] = useState(1);
 	const [globalNewsPage, setGlobalNewsPage] = useState(1);
 
 	const {
@@ -129,6 +132,15 @@ const HomePage = () => {
 	} = useQuery({
 		queryKey: ["dashboard", "news", "global"],
 		queryFn: () => dashboardApi.getGlobalNews(),
+	});
+
+	const {
+		data: externalNews = [],
+		isLoading: isExternalNewsLoading,
+		isError: isExternalNewsError,
+	} = useQuery({
+		queryKey: ["dashboard", "external-news", "asean"],
+		queryFn: () => dashboardApi.getExternalNews(),
 	});
 
 	const {
@@ -153,6 +165,10 @@ const HomePage = () => {
 		ASEAN_COUNTRY_SET.has(news.country),
 	);
 
+	useEffect(() => {
+		setExternalNewsPage(1);
+	}, [externalNews.length]);
+
 	// Local news pagination: 1 hero + (LOCAL_NEWS_PER_PAGE - 1) secondary cards per page
 	const localNewsTotalPages = Math.max(
 		1,
@@ -165,6 +181,16 @@ const HomePage = () => {
 	);
 	const localHero = localNewsSlice[0] ?? null;
 	const localSecondary = localNewsSlice.slice(1);
+
+	const externalNewsTotalPages = Math.max(
+		1,
+		Math.ceil(externalNews.length / EXTERNAL_NEWS_PER_PAGE),
+	);
+	const externalNewsStart = (externalNewsPage - 1) * EXTERNAL_NEWS_PER_PAGE;
+	const externalNewsSlice = externalNews.slice(
+		externalNewsStart,
+		externalNewsStart + EXTERNAL_NEWS_PER_PAGE,
+	);
 
 	// Global news pagination: GLOBAL_NEWS_PER_PAGE per page
 	const globalTotalPages = Math.max(
@@ -440,6 +466,56 @@ const HomePage = () => {
 								</button>
 							))}
 						</div>
+					)}
+				</section>
+
+				<section className="mt-6 mx-4 clay-lg p-4">
+					<div className="flex items-center gap-2 mb-3">
+						<Newspaper className="h-4 w-4 text-primary" />
+						<h2 className="text-sm font-bold text-foreground">
+							ASEAN News
+						</h2>
+					</div>
+					{isExternalNewsLoading && (
+						<div className="space-y-3">
+							{[1, 2].map((n) => (
+								<div
+									key={n}
+									className="w-full h-40 rounded-2xl bg-muted/50 animate-pulse"
+								/>
+							))}
+						</div>
+					)}
+					{isExternalNewsError && !isExternalNewsLoading && (
+						<div className="w-full rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
+							Failed to load ASEAN news.
+						</div>
+					)}
+					{!isExternalNewsLoading && !isExternalNewsError && (
+						<>
+							<div className="space-y-3">
+								{externalNewsSlice.map((item) => (
+									<NewsCard key={item.id} item={item} />
+								))}
+								{externalNews.length === 0 && (
+									<div className="w-full rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
+										No ASEAN news available yet.
+									</div>
+								)}
+							</div>
+							<PaginationControls
+								page={externalNewsPage}
+								totalPages={externalNewsTotalPages}
+								onPrev={() =>
+									setExternalNewsPage((p) => Math.max(1, p - 1))
+								}
+								onNext={() =>
+									setExternalNewsPage((p) =>
+										Math.min(externalNewsTotalPages, p + 1),
+									)
+								}
+							/>
+						</>
 					)}
 				</section>
 
