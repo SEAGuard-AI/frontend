@@ -1,73 +1,112 @@
-# Welcome to your Lovable project
+# SEAGuard
 
-## Project info
+**Live Demo**: [seaguard.netlify.app](https://seaguard.netlify.app/)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**SEAGuard** is an AI-powered platform designed to enhance disaster preparedness and response across ASEAN. By leveraging artificial intelligence, geospatial mapping, and real-time data analysis, SEAGuard aims to provide localized risk forecasts, early warning alerts, and location-based evacuation guidance. Through these capabilities, the platform seeks to bridge existing gaps in disaster information systems and enable communities to make faster and more informed decisions when facing floods, landslides, and typhoon.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Key Features
 
-**Use Lovable**
+### Real-Time Disaster Monitoring
+*   **Active Zones Map**: Interactive visualization of disaster zones (Evacuation, Caution, Danger).
+*   **Global & Local Alerts**: Real-time push notifications and alerts.
+*   **Risk Forecasts**: Data-driven predictions for upcoming environmental risks in the region.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Advanced Navigation
+*   **AR Navigation**: Augmented Reality guided evacuation routes to the nearest shelters.
+*   **Emergency Shelters**: Instant identification and routing to the nearest safety points.
 
-Changes made via Lovable will be committed automatically to this repo.
+### Emergency Resources
+*   **Global Emergency Contacts**: Quick access to maritime and local emergency services across ASEAN countries.
+*   **AI Chatbot Assistant**: 24/7 intelligent assistance for safety queries and emergency guidance.
+*   **Survival Guides**: Comprehensive, disaster-specific survival instructions available offline.
 
-**Use your preferred IDE**
+### Localization & Accessibility
+*   **Multi-language Support**: Fully localized in English, Bahasa Indonesia, Filipino, Thai, Vietnamese, Malay, Burmese, Khmer, and Lao.
+*   **User Setup**: Personalized experience based on user's location and preferred language.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Tech Stack
 
-Follow these steps:
+### Frontend
+*   **Framework**: [React 18](https://reactjs.org/) with [TypeScript](https://www.typescriptlang.org/)
+*   **Build Tool**: [Vite](https://vitejs.dev/)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (Radix UI primitives)
+*   **State Management**: [TanStack Query (React Query)](https://tanstack.com/query/latest)
+*   **Routing**: [React Router DOM v6](https://reactrouter.com/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Project Structure
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```text
+src/
+ ├── components/       # Reusable UI components (shadcn/ui + custom)
+ ├── contexts/         # React Contexts (Auth, Translation, Preferences)
+ ├── data/             # Mock data and constants
+ ├── hooks/            # Custom React hooks
+ ├── lib/              # API services and utility functions (api.ts, utils.ts)
+ ├── pages/            # Main application screens/routes
+ └── test/             # Test configuration and setup
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Environment Variables
 
-**Use GitHub Codespaces**
+Create a `.env` file in the root directory and add the following:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```env
+# Backend API base URL
+VITE_BACKEND_URL=your_backend_api_url_here
 
-## What technologies are used for this project?
+# Google Maps API Key for location services
+VITE_GOOGLE_MAPS_API_KEY=your_api_key_here
+```
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Installation
 
-## How can I deploy this project?
+Ensure you have [Node.js](https://nodejs.org/) installed.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```bash
+# Install dependencies
+npm install
+```
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## Running Locally
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```bash
+# Start development server
+npm run dev
+```
+The application will be available at `http://localhost:5173`.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## Build for Production
+
+```bash
+# Build the project
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## Screenshots
+![Dashboard Overview](docs/screenshots/dashboard.png)
+*Home dashboard showing active alerts and regional status.*
+
+![Interactive Map](docs/screenshots/map.png)
+*Disaster zones and shelter location on the interactive map.*
+
+---

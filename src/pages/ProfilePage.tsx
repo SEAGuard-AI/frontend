@@ -29,6 +29,23 @@ const zoneHex: Record<ZoneLevel, string> = {
   danger: '#dc2626',
 };
 
+// ASEAN country name mapping for reverse geocoding
+const nominatimToAsean: Record<string, string> = {
+  'Indonesia': 'Indonesia',
+  'Philippines': 'Philippines',
+  'Thailand': 'Thailand',
+  'Malaysia': 'Malaysia',
+  'Vietnam': 'Vietnam',
+  'Viet Nam': 'Vietnam',
+  'Myanmar': 'Myanmar',
+  'Cambodia': 'Cambodia',
+  'Laos': 'Laos',
+  "Lao People's Democratic Republic": 'Laos',
+  'Singapore': 'Singapore',
+  'Brunei': 'Brunei',
+  'Brunei Darussalam': 'Brunei',
+};
+
 const ProfilePage = () => {
   const { user, logout } = useAuth();
   const { preferences, setLanguage, setLocation, setTheme } = usePreferences();
@@ -36,13 +53,12 @@ const ProfilePage = () => {
   const navigate = useNavigate();
 
   const [gpsStatus, setGpsStatus] = useState<'loading' | 'success' | 'denied'>('loading');
+  const [gpsCountry, setGpsCountry] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-
-  const userCountry = preferences.country || 'Indonesia';
 
   // Auto-detect GPS location on mount
   useEffect(() => {
@@ -53,15 +69,16 @@ const ProfilePage = () => {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        // Reverse geocode to get a human-readable label
         let label = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`
           );
           const data = await res.json();
-          if (data.display_name) {
-            label = data.display_name;
+          if (data.display_name) label = data.display_name;
+          if (data.address?.country) {
+            const mappedCountry = nominatimToAsean[data.address.country];
+            if (mappedCountry) setGpsCountry(mappedCountry);
           }
         } catch { /* fallback to coordinates */ }
         setLocation({ lat: latitude, lng: longitude, label });
@@ -74,17 +91,19 @@ const ProfilePage = () => {
     );
   }, []);
 
+  const activeCountry = gpsCountry || preferences.country || 'Indonesia';
+
   const { data: fetchedZones = [] } = useQuery({
-    queryKey: ['zones', userCountry],
-    queryFn: () => profileApi.getZones(userCountry),
+    queryKey: ['zones', activeCountry],
+    queryFn: () => profileApi.getZones(activeCountry),
   });
   const { data: fetchedAlerts = [] } = useQuery({
-    queryKey: ['alerts', userCountry],
-    queryFn: () => profileApi.getAlerts(userCountry),
+    queryKey: ['alerts', activeCountry],
+    queryFn: () => profileApi.getAlerts(activeCountry),
   });
   const { data: fetchedContacts = [] } = useQuery({
-    queryKey: ['contacts', userCountry],
-    queryFn: () => profileApi.getContacts(userCountry),
+    queryKey: ['contacts', activeCountry],
+    queryFn: () => profileApi.getContacts(activeCountry),
   });
 
   const nearbyZones = fetchedZones;
@@ -94,16 +113,20 @@ const ProfilePage = () => {
 
   const center: [number, number] = preferences.location
     ? [preferences.location.lat, preferences.location.lng]
-    : (countryDefaultCenters[userCountry] || [-6.2, 106.845]);
+    : (countryDefaultCenters[activeCountry] || [-6.2, 106.845]);
   const isInDanger = userZone && (userZone.level === 'caution' || userZone.level === 'danger');
-  const locationLabel = preferences.location?.label || `${userCountry}`;
+  const locationLabel = preferences.location?.label || `${activeCountry}`;
 
   const currentLangName = preferences.language || 'English';
-  const availableLanguages = Object.entries(aseanLanguages).map(([country, lang]) => ({
-    country,
-    name: lang.name,
-    nativeName: lang.nativeName,
-  }));
+  const availableLanguages = Object.entries(aseanLanguages)
+    .filter(([, lang], index, self) => 
+      self.findIndex(([, l]) => l.name === lang.name) === index
+    )
+    .map(([country, lang]) => ({
+      country,
+      name: lang.name,
+      nativeName: lang.nativeName,
+    }));
 
   // Imperative Leaflet map
   const hasUserLocation = !!preferences.location;
@@ -218,7 +241,7 @@ const ProfilePage = () => {
             <p className="text-sm text-muted-foreground animate-pulse">Detecting your location…</p>
           )}
           {gpsStatus === 'denied' && !preferences.location && (
-            <p className="text-sm text-muted-foreground">Location access denied. Showing default for {userCountry}.</p>
+            <p className="text-sm text-muted-foreground">Location access denied. Showing default for {activeCountry}.</p>
           )}
           {(gpsStatus === 'success' || preferences.location) && (
             <>

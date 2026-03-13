@@ -43,12 +43,12 @@ const LoginPage = () => {
           <Link to="/" className="inline-flex flex-col items-center gap-3 transition-opacity hover:opacity-90">
             <img
               src="/logo-1.png"
-              alt="SeaGUARD logo"
+              alt="SEAGuard logo"
               className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-clay"
             />
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">SeaGUARD</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">SEAGuard</h1>
           </Link>
-          <p className="text-sm text-muted-foreground">ASEAN Disaster Response & Recovery System</p>
+          <p className="text-sm text-muted-foreground">AI-Driven Intelligence for Regional Safety</p>
         </div>
 
         {/* Error Banner */}
