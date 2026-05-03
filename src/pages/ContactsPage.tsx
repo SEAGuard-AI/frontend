@@ -128,7 +128,7 @@ const ContactsPage = () => {
       </div>
 
       {/* Category Filter */}
-      <div className="px-4 mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="px-4 mb-4 flex gap-2 overflow-x-auto pb-3">
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
