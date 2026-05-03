@@ -1,4 +1,4 @@
-import { ArrowRight, Shield, MapPin, Bell, Radio, BookOpen, Users } from "lucide-react";
+import { ArrowRight, Shield, MapPin, Bell, Radio, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ModernMapHero from "@/components/ModernMapHero";
@@ -10,7 +10,7 @@ const features = [
 		icon: Bell,
 		title: "AI Risk Monitoring",
 		description:
-			"Real-time alerts and data-driven risk forecasts for floods, landslides, and typhoons across ASEAN powered by AI analysis.",
+			"Real-time alerts powered by AI analysis of sensor data and regional news across 10+ ASEAN languages — detecting floods, landslides, and typhoons before official warnings are issued.",
 	},
 	{
 		icon: MapPin,
@@ -37,10 +37,10 @@ const features = [
 			"Automatically detects and suggests the closest safe zones, hospitals, and assembly points for rapid emergency response.",
 	},
 	{
-		icon: Users,
-		title: "Multilingual Support",
+		icon: Route,
+		title: "AI Road Damage Assessment",
 		description:
-			"Fully localized in all ASEAN languages to ensure every community has access to critical, life-saving information.",
+			"Instantly detect and classify road damage from aerial and satellite imagery using AI — and identify priority restoration routes to restore connectivity after disaster.",
 	},
 ];
 
@@ -142,7 +142,8 @@ const LandingPage = () => {
 					<p className="text-lg text-muted-foreground leading-relaxed">
 						A centralized, intelligent platform for coordinating
 						emergency response, navigating safe evacuation zones,
-						and providing real-time alerts across Southeast Asia.
+						assessing post-disaster infrastructure, and providing
+						real-time alerts across Southeast Asia.
 					</p>
 
 					<div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -286,7 +287,7 @@ const LandingPage = () => {
 					</span>
 				</h2>
 				<p className="text-muted-foreground text-lg text-center max-w-2xl mb-8">
-					Bridging the gap between awareness and action. Monitor risk from your desktop, and navigate to safety with our specialized mobile tools for AR and emergency reporting.
+					Bridging the gap between awareness and action. Monitor risk from your desktop, navigate to safety with our specialized mobile tools for AR and emergency reporting, and assess post-disaster road damage for faster infrastructure recovery.
 				</p>
 
 				<Button
