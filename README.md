@@ -28,7 +28,7 @@
 
 ---
 
-## Tech Stack
+## Tech Stack 
 
 ### Frontend
 *   **Framework**: [React 18](https://reactjs.org/) with [TypeScript](https://www.typescriptlang.org/)
