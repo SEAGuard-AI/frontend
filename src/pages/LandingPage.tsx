@@ -38,9 +38,9 @@ const features = [
 	},
 	{
 		icon: Route,
-		title: "AI Road Damage Assessment",
+		title: "Smart Evacuation Route Planning",
 		description:
-			"Instantly detect and classify road damage from aerial and satellite imagery using AI — and identify priority restoration routes to restore connectivity after disaster.",
+			"AI analyzes real-time satellite imagery to detect blocked roads, flooded streets, and landslide-affected paths — then generates the safest evacuation routes to the nearest shelter.",
 	},
 ];
 
@@ -141,9 +141,9 @@ const LandingPage = () => {
 
 					<p className="text-lg text-muted-foreground leading-relaxed">
 						A centralized, intelligent platform for coordinating
-						emergency response, navigating safe evacuation zones,
-						assessing post-disaster infrastructure, and providing
-						real-time alerts across Southeast Asia.
+						emergency response, navigating safe evacuation routes
+						from real-time satellite intelligence, and providing
+						AI-powered disaster alerts across Southeast Asia.
 					</p>
 
 					<div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -287,7 +287,7 @@ const LandingPage = () => {
 					</span>
 				</h2>
 				<p className="text-muted-foreground text-lg text-center max-w-2xl mb-8">
-					Bridging the gap between awareness and action. Monitor risk from your desktop, navigate to safety with our specialized mobile tools for AR and emergency reporting, and assess post-disaster road damage for faster infrastructure recovery.
+					Bridging the gap between awareness and action. Monitor risk from your desktop, navigate to safety with our specialized mobile tools for AR and emergency reporting, and follow AI-generated evacuation routes powered by live satellite intelligence.
 				</p>
 
 				<Button
