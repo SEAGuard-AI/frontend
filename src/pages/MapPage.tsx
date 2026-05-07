@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useJsApiLoader } from "@react-google-maps/api";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   aseanCountries,
   countryDefaultCenters,
@@ -30,31 +31,11 @@ import { useNavigate } from "react-router-dom";
 import { usePreferences } from "@/contexts/UserPreferencesContext";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:3000";
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
 
-const darkMapStyles: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#212121" }] },
-  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
-  { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
-  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
-  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#181818" }] },
-  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-  { featureType: "poi.park", elementType: "labels.text.stroke", stylers: [{ color: "#1b1b1b" }] },
-  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
-  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#373737" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
-  { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#4e4e4e" }] },
-  { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-  { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3d3d3d" }] },
-];
+const DARK_TILE =
+  "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png";
+const LIGHT_TILE =
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
 const zoneColors: Record<ZoneLevel, string> = {
   evacuation: "#22c55e",
@@ -85,8 +66,8 @@ interface PredictionPin {
   lat: number;
   lng: number;
   result: Prediction | null;
-  circle: google.maps.Circle | null;
-  loadingMarker: google.maps.Marker | null;
+  circle: L.Circle | null;
+  loadingMarker: L.CircleMarker | null;
 }
 
 interface UserReport {
@@ -107,8 +88,9 @@ interface UserReport {
 
 const MapPage = () => {
   const mapDivRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<google.maps.Map | null>(null);
-  const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const userMarkerRef = useRef<L.CircleMarker | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [selectedCluster, setSelectedCluster] =
     useState<PopulationCluster | null>(null);
@@ -131,20 +113,17 @@ const MapPage = () => {
   const [userReportsList, setUserReportsList] = useState<UserReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<UserReport | null>(null);
   const [reportImageIndex, setReportImageIndex] = useState(0);
-  const reportMarkersRef = useRef<google.maps.Marker[]>([]);
+  const reportMarkersRef = useRef<L.Marker[]>([]);
 
   // ── Predict Mode ─────────────────────────────────────────────────────────
   const [detectMode, setDetectMode] = useState(false);
   const [selectedPrediction, setSelectedPrediction] =
     useState<Prediction | null>(null);
   const pinsRef = useRef<PredictionPin[]>([]);
-  const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const clickHandlerRef = useRef<((e: L.LeafletMouseEvent) => void) | null>(
+    null,
+  );
   const filterTypeRef = useRef<DisasterType>(filterType);
-
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
 
   // Keep filterTypeRef in sync
   useEffect(() => {
@@ -164,8 +143,7 @@ const MapPage = () => {
     if (!mapInstance.current || !mapReady) return;
     const map = mapInstance.current;
 
-    // Remove existing report markers
-    reportMarkersRef.current.forEach((m) => m.setMap(null));
+    reportMarkersRef.current.forEach((m) => m.remove());
     reportMarkersRef.current = [];
 
     const pinColor = (type: string) => {
@@ -177,7 +155,6 @@ const MapPage = () => {
 
     userReportsList.forEach((report) => {
       const { fill, stroke } = pinColor(report.disasterType);
-      // Custom SVG drop-pin
       const svgIcon = `
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
           <path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 24 16 24S32 26.5 32 16C32 7.163 24.837 0 16 0z"
@@ -188,102 +165,105 @@ const MapPage = () => {
           </text>
         </svg>`;
 
-      const marker = new google.maps.Marker({
-        position: { lat: report.lat, lng: report.lng },
-        map,
-        title: report.disasterType,
-        icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgIcon)}`,
-          scaledSize: new google.maps.Size(32, 40),
-          anchor: new google.maps.Point(16, 40),
-        },
-        zIndex: 500,
+      const icon = L.divIcon({
+        html: svgIcon,
+        iconSize: [32, 40],
+        iconAnchor: [16, 40],
+        className: "",
       });
 
-      marker.addListener("click", () => {
+      const marker = L.marker([report.lat, report.lng], {
+        icon,
+        zIndexOffset: 500,
+      });
+      marker.on("click", () => {
         setSelectedReport(report);
         setReportImageIndex(0);
         setSelectedPrediction(null);
         setSelectedCluster(null);
       });
-
+      marker.addTo(map);
       reportMarkersRef.current.push(marker);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userReportsList, mapReady]);
 
   // Initialize map — get user location first so map opens directly there
   useEffect(() => {
-    if (!isLoaded || !mapDivRef.current || mapInstance.current) return;
+    if (!mapDivRef.current || mapInstance.current) return;
 
     const fallbackCenter = countryDefaultCenters[selectedCountry] || [
       -6.2, 106.845,
     ];
 
-    const initMap = (center: { lat: number; lng: number }, zoom: number) => {
+    const initMap = (center: [number, number], zoom: number) => {
       if (!mapDivRef.current) return;
-      const map = new google.maps.Map(mapDivRef.current, {
+
+      const map = L.map(mapDivRef.current, {
         center,
         zoom,
-        disableDefaultUI: true,
-        zoomControl: true,
-        zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_TOP },
-        styles: preferences.theme === "dark" ? darkMapStyles : [],
+        zoomControl: false,
       });
+
+      L.control.zoom({ position: "topright" }).addTo(map);
+
+      const tileUrl =
+        preferences.theme === "dark" ? DARK_TILE : LIGHT_TILE;
+      const tile = L.tileLayer(tileUrl, { maxZoom: 19, attribution: "" });
+      tile.addTo(map);
+      tileLayerRef.current = tile;
 
       mapInstance.current = map;
       setMapReady(true);
 
-      // Blue dot for user location
       if (zoom === 15) {
-        userMarkerRef.current = new google.maps.Marker({
-          position: center,
-          map,
-          title: "Your Location",
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 9,
-            fillColor: "#4285F4",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2.5,
-          },
-          zIndex: 999,
-        });
+        userMarkerRef.current = L.circleMarker(center, {
+          radius: 9,
+          fillColor: "#4285F4",
+          fillOpacity: 1,
+          color: "#ffffff",
+          weight: 2.5,
+        }).addTo(map);
       }
     };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          initMap({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 15);
+          initMap([pos.coords.latitude, pos.coords.longitude], 15);
         },
         () => {
-          // Permission denied or unavailable — fall back to country center
-          initMap(
-            { lat: fallbackCenter[0], lng: fallbackCenter[1] },
-            13,
-          );
+          initMap([fallbackCenter[0], fallbackCenter[1]], 13);
         },
         { timeout: 5000 },
       );
     } else {
-      initMap({ lat: fallbackCenter[0], lng: fallbackCenter[1] }, 13);
+      initMap([fallbackCenter[0], fallbackCenter[1]], 13);
     }
 
     return () => {
-      mapInstance.current = null;
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, []);
+
+  // Swap tile layer when theme changes
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+    tileLayerRef.current.setUrl(
+      preferences.theme === "dark" ? DARK_TILE : LIGHT_TILE,
+    );
+  }, [preferences.theme]);
 
   // Pan to selected country
   useEffect(() => {
     if (!mapInstance.current) return;
     const center = countryDefaultCenters[selectedCountry];
     if (center) {
-      mapInstance.current.panTo({ lat: center[0], lng: center[1] });
-      mapInstance.current.setZoom(13);
+      mapInstance.current.setView([center[0], center[1]], 13);
     }
   }, [selectedCountry]);
 
@@ -306,20 +286,13 @@ const MapPage = () => {
 
     const pinId = `${Date.now()}`;
 
-    // Loading marker
-    const loadingMarker = new google.maps.Marker({
-      position: { lat, lng },
-      map,
-      animation: google.maps.Animation.BOUNCE,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: "#6b7280",
-        fillOpacity: 0.8,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      },
-    });
+    const loadingMarker = L.circleMarker([lat, lng], {
+      radius: 8,
+      fillColor: "#6b7280",
+      fillOpacity: 0.8,
+      color: "#ffffff",
+      weight: 2,
+    }).addTo(map);
 
     const pin: PredictionPin = {
       id: pinId,
@@ -354,7 +327,7 @@ const MapPage = () => {
         type: disasterType as "flood" | "landslide" | "typhoon",
       };
 
-      loadingMarker.setMap(null);
+      loadingMarker.remove();
 
       const isDisaster = data.disaster_occurred === 1;
       const circleColor = isDisaster
@@ -365,17 +338,14 @@ const MapPage = () => {
             : "#f97316"
         : "#22c55e";
 
-      const circle = new google.maps.Circle({
-        center: { lat, lng },
+      const circle = L.circle([lat, lng], {
         radius: 700,
-        map,
+        color: circleColor,
         fillColor: circleColor,
         fillOpacity: 0.35,
-        strokeColor: circleColor,
-        strokeWeight: 2.5,
-        strokeOpacity: 0.85,
-        clickable: true,
-      });
+        weight: 2.5,
+        opacity: 0.85,
+      }).addTo(map);
 
       let opacity = 0.35;
       let dir = -1;
@@ -383,10 +353,10 @@ const MapPage = () => {
         opacity += dir * 0.04;
         if (opacity <= 0.15) dir = 1;
         if (opacity >= 0.4) dir = -1;
-        circle.setOptions({ fillOpacity: opacity });
+        circle.setStyle({ fillOpacity: opacity });
       }, 80);
 
-      circle.addListener("click", () => setSelectedPrediction(data));
+      circle.on("click", () => setSelectedPrediction(data));
       (circle as any)._pulseInterval = pulseInterval;
 
       pin.result = data;
@@ -399,52 +369,45 @@ const MapPage = () => {
         let fadeOpacity = 0.35;
         const fadeInterval = setInterval(() => {
           fadeOpacity = Math.max(0, fadeOpacity - 0.05);
-          circle.setOptions({
-            fillOpacity: fadeOpacity,
-            strokeOpacity: fadeOpacity,
-          });
+          circle.setStyle({ fillOpacity: fadeOpacity, opacity: fadeOpacity });
           if (fadeOpacity <= 0) {
             clearInterval(fadeInterval);
-            circle.setMap(null);
+            circle.remove();
           }
         }, 40);
       }, 5000);
 
       setSelectedPrediction(data);
     } catch {
-      loadingMarker.setMap(null);
+      loadingMarker.remove();
 
-      const errorCircle = new google.maps.Circle({
-        center: { lat, lng },
+      const errorCircle = L.circle([lat, lng], {
         radius: 700,
-        map,
+        color: "#6b7280",
         fillColor: "#6b7280",
         fillOpacity: 0.25,
-        strokeColor: "#6b7280",
-        strokeWeight: 2,
-        strokeOpacity: 0.6,
-        clickable: false,
-      });
+        weight: 2,
+        opacity: 0.6,
+        interactive: false,
+      }).addTo(map);
 
-      // Tooltip via InfoWindow
-      const infoWindow = new google.maps.InfoWindow({
-        content: "⚠️ Not Available",
-        position: { lat, lng },
-      });
-      infoWindow.open(map);
+      const popup = L.popup({ closeButton: false, autoClose: false })
+        .setLatLng([lat, lng])
+        .setContent("⚠️ Not Available")
+        .openOn(map);
 
       setTimeout(() => {
         let fadeOpacity = 0.25;
         const fadeInterval = setInterval(() => {
           fadeOpacity = Math.max(0, fadeOpacity - 0.05);
-          errorCircle.setOptions({
+          errorCircle.setStyle({
             fillOpacity: fadeOpacity,
-            strokeOpacity: fadeOpacity,
+            opacity: fadeOpacity,
           });
           if (fadeOpacity <= 0) {
             clearInterval(fadeInterval);
-            errorCircle.setMap(null);
-            infoWindow.close();
+            errorCircle.remove();
+            popup.remove();
           }
         }, 40);
       }, 5000);
@@ -457,26 +420,26 @@ const MapPage = () => {
     if (!map) return;
 
     if (detectMode) {
-      clickListenerRef.current = map.addListener(
-        "click",
-        (e: google.maps.MapMouseEvent) => {
-          if (e.latLng) runPrediction(e.latLng.lat(), e.latLng.lng());
-        },
-      );
-      map.setOptions({ draggableCursor: "crosshair" });
+      const handler = (e: L.LeafletMouseEvent) => {
+        runPrediction(e.latlng.lat, e.latlng.lng);
+      };
+      clickHandlerRef.current = handler;
+      map.on("click", handler);
+      map.getContainer().style.cursor = "crosshair";
     } else {
-      if (clickListenerRef.current) {
-        google.maps.event.removeListener(clickListenerRef.current);
-        clickListenerRef.current = null;
+      if (clickHandlerRef.current) {
+        map.off("click", clickHandlerRef.current);
+        clickHandlerRef.current = null;
       }
-      map.setOptions({ draggableCursor: "" });
+      map.getContainer().style.cursor = "";
     }
 
     return () => {
-      if (clickListenerRef.current) {
-        google.maps.event.removeListener(clickListenerRef.current);
-        clickListenerRef.current = null;
+      if (clickHandlerRef.current) {
+        map.off("click", clickHandlerRef.current);
+        clickHandlerRef.current = null;
       }
+      map.getContainer().style.cursor = "";
     };
   }, [detectMode, runPrediction]);
 
@@ -508,8 +471,7 @@ const MapPage = () => {
     const lat = parseFloat(result.lat);
     const lon = parseFloat(result.lon);
     if (mapInstance.current) {
-      mapInstance.current.panTo({ lat, lng: lon });
-      mapInstance.current.setZoom(15);
+      mapInstance.current.setView([lat, lon], 15);
     }
     setShowSearch(false);
     setSearchQuery("");
@@ -522,14 +484,13 @@ const MapPage = () => {
   return (
     <div className="h-full w-full p-3">
       <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-clay">
-        {/* Google Map container */}
-        {!isLoaded ? (
-          <div className="h-full w-full flex items-center justify-center bg-muted">
+        {/* Map container */}
+        {!mapReady && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : (
-          <div ref={mapDivRef} className="h-full w-full" />
         )}
+        <div ref={mapDivRef} className="h-full w-full" />
 
         {/* Search Bar */}
         <div className="absolute top-4 left-4 right-4 z-[1000] space-y-1">
